@@ -2,7 +2,7 @@
 
 **A modular MATLAB pipeline for automated cleaning of EBSD datasets**
 
-MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, for automated cleaning of Electron Backscatter Diffraction (EBSD) datasets. It applies **Mean Angular Deviation (MAD) filtering**, phase and orientation **wild spike removal (WSR)**, and iterative hole filling to produce high-quality, microstructure-consistent EBSD data. The pipeline includes visualization tools and checkpoint support for long-running datasets.
+MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, for automated cleaning of Electron Backscatter Diffraction (EBSD) datasets. It applies **Mean Angular Deviation (MAD) filtering**, phase and orientation **wild spike removal (WSR)**, and iterative hole filling to produce high-quality, microstructure-consistent EBSD data. The pipeline includes visualisation tools and checkpoint support for long-running datasets.
 
 ---
 ## Features
@@ -22,7 +22,7 @@ MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, fo
 - **Image Processing Toolbox** *  
 - **Statistics and Machine Learning Toolbox** *  
 
-<sub>* Proprietary MATLAB toolboxes; a valid license is required to run the code.</sub>
+<sub>* Proprietary software and toolboxes; a valid license is required to run the code.</sub>
 
  ---
 
@@ -41,39 +41,36 @@ addpath(genpath('path_to_MAPClean'));
 
 ---
 
-%% ## Usage
-%%
-%% 1. Place raw EBSD `.ctf` files in the `DataFiles` directory.
-%% 2. Open `MAPClean_Pipeline.m` and set **stage control flags**:
-%%
-%% ```matlab
-%% runMAD      = true;
-%% runPhaseWSR = true;
-%% runOriWSR   = true;
-%% runHoleFill = true;
-%% runSaveFile = true;
-%% ```
-%%
-%% 3. Adjust parameters in the `params` struct if necessary.
-%% 4. Run the pipeline:
-%%
-%% ```matlab
-%% MAPClean_Pipeline
-%% ```
-%%
-%% 5. Check outputs in the `exports` directory.
-%%
-%% ---
-%%
+## Usage
+
+1. Place raw EBSD `.ctf` files in the `DataFiles` directory.
+2. Open `MAPClean.m` and set **stage control flags**:
+```matlab
+runMAD      = true;
+runPhaseWSR = true;
+runOriWSR   = true;
+runHoleFill = true;
+runSaveFile = true;
+```
+
+3. Adjust parameters in the `params` structure.
+   
+4. Run the pipeline:
+```matlab
+MAPClean
+ ```
+5. Check outputs in the `exports` directory.
+---
+
 %% ## Workflow Overview
 %%
-%% 1. **Initialization** – load EBSD data, set parameters, assign phase colors.
+%% 1. **Initialisation** – load EBSD data, set parameters, assign phase colours.
 %% 2. **MAD filtering** – remove high Mean Angular Deviation pixels.
 %% 3. **Data quality assessment** – determine strict vs. relaxed mode.
 %% 4. **Phase WSR** – remove phase wild spikes using neighborhood analysis.
 %% 5. **Orientation WSR** – remove orientation wild spikes, including twin handling for Anorthite.
 %% 6. **Hole filling** – iterative, radius-based filling of unindexed pixels.
-%% 7. **Export** – cleaned EBSD files and visualizations.
+%% 7. **Export** – cleaned EBSD files and visualisations.
 %%
 %% ---
 %%
