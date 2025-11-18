@@ -15,7 +15,6 @@ MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, fo
  - Fully customizable parameters for different datasets
 
 ---
-
 ## Requirements
 
 - **MATLAB** (R2016b or newer required) *  
@@ -23,7 +22,8 @@ MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, fo
 - **Image Processing Toolbox** *  
 - **Statistics and Machine Learning Toolbox** *  
 
--- \* Proprietary MATLAB toolboxes; a valid license is required to run the code.
+<sub>* Proprietary MATLAB toolboxes; a valid license is required to run the code.</sub>
+
  ---
 
  ## Installation
