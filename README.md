@@ -93,8 +93,8 @@ MAPClean
  ```
 Cluster <cluster identifier>: filled <number of pixels filled>/<total number of pixels in cluster>
  ```  
-- Only clusters that meet the `logClusterSizeThreshold` are displayed.  
-- For large datasets, the output can be captured using MATLAB `diary` or exported to text files for later analysis.
+- Only clusters where at least 10 holes are filled are displayed.  
+- For large datasets, the output is captured using MATLAB `diary` and exported to text files for later review.
 
 ## Contributing
 - Fork the repository  
