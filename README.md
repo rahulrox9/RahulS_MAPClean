@@ -62,9 +62,16 @@ MAPClean
 6. **Filling unindexed pixels** – Breadth-First Search based, iterative filling:  
 - Clusters of connected unindexed pixels are discovered using 8-connectivity  
 - Only pixels that are not protected are included in cluster discovery  
-- Each cluster is processed iteratively based on dominant phase fraction and minimum number of valid neighbours  
+- Each cluster is processed iteratively based on the dominant phase fraction and the minimum number of valid neighbours  
 - Cluster information is logged only if pixels are successfully filled (default: clusters larger than ten pixels)  
 7. **Export** – save cleaned EBSD file, phase maps, and inverse pole figure maps  
+
+## Checkpoints and Resumable Workflow
+- At the end of each cleaning stage (Mean Angular Deviation filtering, phase wild spike removal, orientation wild spike removal, and hole filling), the pipeline automatically saves a checkpoint as a `.mat` file in the `exports` directory.
+- These checkpoint files store the current state of the EBSD data, phase maps, and orientation data.
+- If a stage is skipped (for example, by setting its control flag to `false`), the pipeline can automatically load the corresponding checkpoint to resume processing from the last completed stage.
+- This ensures that long-running datasets do not need to be reprocessed from the beginning if interrupted.
+- Checkpoints are named according to the stage, e.g., `*_ebsd_mad.mat`, `*_ebsd_phase.mat`, `*_ebsd_ori.mat`,`*_ebsd_fill.mat`.
 
 ## Parameters
 | Parameter | Default | Description |
@@ -93,7 +100,7 @@ MAPClean
  ```
 Cluster <cluster identifier>: filled <number of pixels filled>/<total number of pixels in cluster>
  ```  
-- Only clusters where at least 10 holes are filled are displayed.  
+- Only clusters where at least 10 connected holes exist are displayed.  
 - For large datasets, the output is captured using MATLAB `diary` and exported to text files for later review.
 
 ## Contributing
