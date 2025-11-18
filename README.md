@@ -69,19 +69,18 @@ MAPClean
 ## Parameters
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `thresholdFraction` | 0.75 | Minimum fraction of dominant cluster required to compute mean orientation during orientation wild spike removal |
-| `exportResolution` | 300 dots per inch | Resolution for exported figures (phase maps and inverse pole figure maps) |
-| `meanAngularDeviationThreshold` | 0.9 radians | Maximum deviation allowed for a pixel; higher deviation pixels are set to unindexed |
-| `radiusPhaseWildSpikeRemoval` | 2 | Neighbourhood radius for phase wild spike removal |
-| `radiusOrientationWildSpikeRemoval` | 2 | Neighbourhood radius for orientation wild spike removal |
-| `orientationMisorientationTolerance` | 5° | Maximum misorientation tolerated when comparing neighbouring orientations |
-| `minimumFractionOrientation` | 0.25 | Minimum fraction of similar neighbours required for orientation wild spike removal |
-| `maximumNumberOfPasses` | 50 | Maximum iterations for filling unindexed pixels |
-| `radiusFilling` | [6 5 4 3 2 1] | Sequence of neighbourhood radii used for multi-pass BFS filling of unindexed pixels |
-| `minimumNeighbours` | 3 | Minimum number of valid neighbouring pixels required to fill a pixel in a cluster |
-| `minimumDominantFraction` | 0.50 | Minimum fraction of dominant phase among neighbours required to fill a pixel |
-| `protectedMask` | N/A | Logical mask of pixels protected from filling; these pixels are excluded from cluster discovery |
-| `logClusterSizeThreshold` | 10 | Minimum cluster size required to print logging information |
+| `thresholdFrac` | 0.75 | Minimum fraction of dominant cluster required to compute mean orientation during orientation wild spike removal |
+| `exportRes` | 300 dots per inch | Resolution for exported figures (phase maps and inverse pole figure maps) |
+| `madThreshold` | 0.9 radians | Maximum deviation allowed for a pixel; higher deviation pixels are set to unindexed |
+| `radius_phase` | 2 | Neighbourhood radius for phase wild spike removal |
+| `radius_ori` | 2 | Neighbourhood radius for orientation wild spike removal |
+| `misTol_ori` | 5° | Maximum misorientation tolerated when comparing neighbouring orientations |
+| `minFrac_ori` | 0.25 | Minimum fraction of similar neighbours required for orientation wild spike removal |
+| `radius_fill` | [6 5 4 3 2 1] | Sequence of neighbourhood radii used for multi-pass BFS filling of unindexed pixels |
+| `min_neighbours` | 3 | Minimum number of valid neighbouring pixels required to fill a pixel in a cluster |
+| `min_dom_frac` | 0.50 | Minimum fraction of dominant phase among neighbours required to fill a pixel |
+% | `phaseFrac` | set individually for each radius | Adaptive phase fraction based on the neighbourhood radius; two-element vector `[a b]`, where `a` is the minimum fraction of indexed neighbours required for hole filling, and `b` is the minimum fraction of the dominant phase among neighbours |
+
 
 ## Outputs
 - **Cleaned EBSD files** (`*_clean.ctf`)  
