@@ -1,0 +1,2 @@
+# MAPClean – Microstructurally Adaptive Pixel-Level Cleaning
+A modular MATLAB pipeline, built on the MTEX open-source toolbox, for automated cleaning of EBSD datasets. MAPClean applies Mean Angular Deviation (MAD) filtering, phase and orientation wild spike removal (WSR), and iterative hole filling to produce high-quality, microstructure-consistent EBSD data with visualisations and checkpoint support.
