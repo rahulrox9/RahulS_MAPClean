@@ -62,57 +62,52 @@ MAPClean
 5. Check outputs in the `exports` directory.
 ---
 
-%% ## Workflow Overview
-%%
-%% 1. **Initialisation** – load EBSD data, set parameters, assign phase colours.
-%% 2. **MAD filtering** – remove high Mean Angular Deviation pixels.
-%% 3. **Data quality assessment** – determine strict vs. relaxed mode.
-%% 4. **Phase WSR** – remove phase wild spikes using neighborhood analysis.
-%% 5. **Orientation WSR** – remove orientation wild spikes, including twin handling for Anorthite.
-%% 6. **Hole filling** – iterative, radius-based filling of unindexed pixels.
-%% 7. **Export** – cleaned EBSD files and visualisations.
-%%
-%% ---
-%%
-%% ## Parameters
-%%
-%% | Parameter | Default | Description |
-%% |-----------|---------|-------------|
-%% | `madThreshold` | 0.9 rad | Maximum MAD allowed for a pixel |
-%% | `radius_phase` | 2 | Neighborhood radius for phase WSR |
-%% | `radius_ori` | 2 | Neighborhood radius for orientation WSR |
-%% | `misTol_ori` | 5° | Orientation misorientation tolerance |
-%% | `numMaxPasses` | 50 | Maximum iterations for hole filling |
-%% | `radius_fill` | [6 5 4 3 2 1] | Multi-radius hole filling sequence |
-%% | `phaseFrac` | Adaptive | Minimum fraction of neighbors to assign a phase |
-%%
-%% > Full list of adjustable parameters is in the `params` struct inside the main script.
-%%
-%% ---
-%%
-%% ## Outputs
-%%
-%% - **Cleaned EBSD files** (`*_clean.ctf`)
-%% - **Phase maps** and **IPF maps** as PNGs
-%% - **Checkpoint MAT files** for each stage: MAD, WSR, hole filling
-%% - **Phase statistics** printed to the console
-%%
-%% ---
-%%
-%% ## Example
-%%
-%% Before and after cleaning phase maps and IPF maps can be generated automatically in the `exports` directory. Example visualizations illustrate how MAPClean removes noise and fills unindexed regions while preserving microstructure.
-%%
-%% ---
-%%
-%% ## Contributing
-%%
-%% - Fork the repository
-%% - Create a new branch for your changes
-%% - Submit a pull request with detailed description
-%%
-%% ---
-%%
-%% ## License
-%%
-%% MIT License – see [LICENSE](LICENSE)
+## Workflow Overview
+
+ 1. **Initialisation** – load EBSD data, set parameters, assign phase colours.
+ 2. **MAD filtering** – remove high Mean Angular Deviation pixels.
+ 3. **Data quality assessment** – determine strict vs. relaxed mode.
+ 4. **Phase WSR** – remove phase wild spikes using neighbourhood analysis.
+ 5. **Orientation WSR** – remove orientation wild spikes, including twin handling for Anorthite.
+ 6. **Hole filling** – iterative, radius-based filling of unindexed pixels.
+ 7. **Export** – cleaned EBSD file.
+
+ ---
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `thresholdFrac` | 0.75 | Minimum fraction of dominant cluster required to compute mean orientation during WSR |
+| `exportRes` | 300 dpi | Resolution for exported figures (phase maps and IPF maps) |
+| `madThreshold` | 0.9 rad | Maximum MAD allowed for a pixel; higher MAD pixels are set to notIndexed |
+| `radius_phase` | 2 | Neighbourhood radius for phase Wild Spike Removal (WSR) |
+| `radius_ori` | 2 | Neighbourhood radius for orientation Wild Spike Removal (WSR) |
+| `misTol_ori` | 5° | Maximum misorientation tolerated when comparing neighboring orientations |
+| `minFrac_ori` | 0.25 | Minimum fraction of similar neighbours required for orientation WSR |
+| `numMaxPasses` | 50 | Maximum iterations for hole filling procedure |
+| `radius_fill` | [6 5 4 3 2 1] | Sequence of neighborhood radii used for multi-pass hole filling |
+| `min_neighbours` | 3 | Minimum number of valid neighbours required to fill a hole |
+| `min_dom_frac` | 0.50 | Minimum fraction of dominant phase among neighbours to fill a hole |
+| `phaseFrac` | Adaptive per radius | Two values per radius: minimum neighbour fraction and minimum dominant fraction used to assign a phase during hole filling |
+
+---
+## Outputs
+- **Cleaned EBSD files** (`*_clean.ctf`)
+- **Phase maps** and **IPF maps** as PNGs
+- **Checkpoint MAT files** for each stage: MAD, WSR, hole filling
+- **Phase statistics** printed to the console
+---
+
+
+## Contributing
+- Fork the repository
+- Create a new branch for your changes
+- Submit a pull request with detailed description
+
+---
+
+## License
+
+This code is licensed under **GPLv3** (see [LICENSE](LICENSE)).
+> Note: This project depends on MTEX (GPLv3) and proprietary MATLAB toolboxes. Users must have a valid MATLAB license to run the code.
+
