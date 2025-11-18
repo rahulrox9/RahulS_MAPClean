@@ -71,7 +71,7 @@ MAPClean
 - These checkpoint files store the current state of the EBSD data, phase maps, and orientation data.
 - If a stage is skipped (for example, by setting its control flag to `false`), the pipeline can automatically load the corresponding checkpoint to resume processing from the last completed stage.
 - This ensures that long-running datasets do not need to be reprocessed from the beginning if interrupted.
-- Checkpoints are named according to the stage, e.g., `*_ebsd_mad.mat`, `*_ebsd_phase.mat`, `*_ebsd_ori.mat`,`*_ebsd_fill.mat`.
+- Checkpoints are named according to the stage: `*_ebsd_mad.mat`, `*_ebsd_phase.mat`, `*_ebsd_ori.mat`,`*_ebsd_fill.mat`.
 
 ## Parameters
 | Parameter | Default | Description |
