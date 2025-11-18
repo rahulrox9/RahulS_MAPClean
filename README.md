@@ -4,7 +4,6 @@
 
 MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction datasets. It applies **Mean Angular Deviation filtering**, **phase and orientation wild spike removal**, and iterative hole filling using **Breadth-First Search based cluster discovery** to produce high-quality, microstructure-consistent EBSD data. The pipeline includes visualisation tools and checkpoint support for long-running datasets.
 
- ---
 
 ## Features
 - Modular, stage-wise cleaning of Electron Backscatter Diffraction datasets  
@@ -18,17 +17,12 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
 - Checkpoint-based workflow for reproducibility and resuming interrupted runs  
 - Fully customisable parameters for different datasets  
 
----
-
 ## Requirements
-
 - **MATLAB** (version 2016b or newer)  
 - **MTEX Toolbox** ([https://mtex-toolbox.github.io/](https://mtex-toolbox.github.io/))  
 - **Image Processing Toolbox**  
 - **Statistics and Machine Learning Toolbox**  
 > Note: Proprietary MATLAB toolboxes require a valid licence to run the code.  
-
----
 
 ## Installation
 
@@ -42,10 +36,7 @@ git clone https://github.com/rahulrox9/RahulS_MAPClean
  ```
 3. Ensure MTEX and MATLAB toolboxes are installed and added to your MATLAB path.
 
----
-
 ## Usage
-
 1. Place raw EBSD `.ctf` files in the `DataFiles` directory.  
 2. Open `MAPClean.m` and set stage control flags:
 ```matlab
@@ -61,7 +52,6 @@ runSaveFile                        = true;
 MAPClean
 ```
 5. Check outputs in the `exports` directory.
----
 
 ## Workflow Overview
 1. **Initialisation** – load Electron Backscatter Diffraction data, set parameters, and assign phase colours.  
@@ -75,7 +65,6 @@ MAPClean
 - Each cluster is processed iteratively based on dominant phase fraction and minimum number of valid neighbours  
 - Cluster information is logged only if pixels are successfully filled (default: clusters larger than ten pixels)  
 7. **Export** – save cleaned EBSD file, phase maps, and inverse pole figure maps  
----
 
 ## Parameters
 | Parameter | Default | Description |
@@ -94,16 +83,11 @@ MAPClean
 | `protectedMask` | N/A | Logical mask of pixels protected from filling; these pixels are excluded from cluster discovery |
 | `logClusterSizeThreshold` | 10 | Minimum cluster size required to print logging information |
 
----
-
 ## Outputs
-
 - **Cleaned EBSD files** (`*_clean.ctf`)  
 - **Phase maps** and **inverse pole figure maps** in PNG format  
 - **Checkpoint MAT files** for each stage: Mean Angular Deviation filter, wild spike removal, and hole filling  
 - **Cluster-level statistics** printed in the console for clusters meeting `logClusterSizeThreshold`  
-
----
 
 ## Logging
 - Cluster-level statistics are printed in the following format:  
@@ -112,12 +96,11 @@ Cluster <cluster identifier>: filled <number of pixels filled>/<total number of 
  ```  
 - Only clusters that meet the `logClusterSizeThreshold` are displayed.  
 - For large datasets, the output can be captured using MATLAB `diary` or exported to text files for later analysis.
----
+
 ## Contributing
 - Fork the repository  
 - Create a new branch for your changes  
 - Submit a pull request with a detailed description  
----
 
 ## Licence
 This code is licensed under **GPL version 3** (see [LICENSE](LICENSE)).  
