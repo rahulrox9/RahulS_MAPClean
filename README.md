@@ -79,7 +79,7 @@ MAPClean
 | `radius_fill` | [6 5 4 3 2 1] | Sequence of neighbourhood radii used for multi-pass BFS filling of unindexed pixels |
 | `min_neighbours` | 3 | Minimum number of valid neighbouring pixels required to fill a pixel in a cluster |
 | `min_dom_frac` | 0.50 | Minimum fraction of dominant phase among neighbours required to fill a pixel |
-% | `phaseFrac` | set individually for each radius | Adaptive phase fraction based on the neighbourhood radius; two-element vector `[a b]`, where `a` is the minimum fraction of indexed neighbours required for hole filling, and `b` is the minimum fraction of the dominant phase among neighbours |
+| `phaseFrac` | set individually for each radius | Adaptive phase fraction based on the neighbourhood radius; two-element vector `[a b]`, where `a` is the minimum fraction of indexed neighbours required for hole filling, and `b` is the minimum fraction of the dominant phase among neighbours |
 
 
 ## Outputs
