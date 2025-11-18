@@ -29,7 +29,7 @@ MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, fo
  ## Installation
  1. Clone this repository:
  ```bash
-git clone https://github.com/yourusername/MAPClean.git
+git clone https://github.com/rahulrox9/RahulS_MAPClean
 ```
 
 2. Add the repository to your MATLAB path:
