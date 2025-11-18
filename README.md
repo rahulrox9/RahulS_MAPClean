@@ -18,29 +18,29 @@ MAPClean is a modular MATLAB pipeline, built on the MTEX open-source toolbox, fo
 
 ## Requirements
 
-- **MATLAB** (R2016b or newer required)
-- **MTEX Toolbox** ([https://mtex-toolbox.github.io/](https://mtex-toolbox.github.io/))
+- **MATLAB** (R2016b or newer required) *  
+- **MTEX Toolbox** ([https://mtex-toolbox.github.io/](https://mtex-toolbox.github.io/))  
+- **Image Processing Toolbox** *  
+- **Statistics and Machine Learning Toolbox** *  
 
+\* Proprietary MATLAB toolboxes; a valid license is required to run the code.
  ---
-%%
-%% ## Installation
-%%
-%% 1. Clone this repository:
-%%
-%% ```bash
-%% git clone https://github.com/yourusername/MAPClean.git
-%% ```
-%%
-%% 2. Add the repository to your MATLAB path:
-%%
-%% ```matlab
-%% addpath(genpath('path_to_MAPClean'));
-%% ```
-%%
-%% 3. Ensure MTEX is installed and added to your MATLAB path.
-%%
-%% ---
-%%
+
+ ## Installation
+ 1. Clone this repository:
+ ```bash
+git clone https://github.com/yourusername/MAPClean.git
+```
+
+2. Add the repository to your MATLAB path:
+```matlab
+addpath(genpath('path_to_MAPClean'));
+ ```
+
+3. Ensure MTEX and MATLAB toolboxes are installed and added to your MATLAB path.
+
+---
+
 %% ## Usage
 %%
 %% 1. Place raw EBSD `.ctf` files in the `DataFiles` directory.
