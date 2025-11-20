@@ -3,7 +3,7 @@
 
 **A modular MATLAB pipeline for automated cleaning of Electron Backscatter Diffraction datasets**
 
-MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction datasets. It applies **Mean Angular Deviation filtering**, **phase and orientation wild spike removal**, and iterative hole filling using **Breadth-First Search based cluster discovery** to produce high-quality, microstructure-consistent EBSD data. The pipeline includes visualisation tools and checkpoint support for long-running datasets.
+MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction datasets. It applies **Mean Angular Deviation filtering**, **phase and orientation wild spike removal**, and iterative hole filling using **Breadth-First Search based cluster discovery** or **Multi-Pass FIlling** to produce high-quality, microstructure-consistent EBSD data. The pipeline includes visualisation tools and checkpoint support for long-running datasets.
 
 
 ## Features
