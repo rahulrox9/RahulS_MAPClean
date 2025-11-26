@@ -29,7 +29,6 @@ params.madThreshold   = 0.9;        % radians, MAD filter threshold
 
 % Phase WSR parameters
 params.radius_phase   = 2;          % WSR kernel radius (in pixels)
-params.min_neighbours = 3;          % Minimum number of neighbours (unused in doPhaseWSR logic, kept for consistency)
 params.min_dom_frac   = 0.5;        % Minimum dominant phase fraction for 'aggressive' flip
 params.numPasses      = 25;         % Number of passes (unused, kept for consistency)
 
@@ -1527,3 +1526,4 @@ function savePNG(figHandle,filenameStem,exportPath,res)
     close(figHandle);
     fprintf('Saved: %s.png\n', filenameStem);
 end
+
