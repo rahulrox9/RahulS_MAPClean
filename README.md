@@ -11,8 +11,8 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
 * **Phase Wild Spike Removal (WSR):** Corrects misindexed pixels using local phase comparison (Conservative or Aggressive based on protocol).
 * **Orientation WSR:** Corrects orientation spikes with specific twin-boundary handling (currently optimised for Anorthite).
 * **Adaptive Hole Filling:**
-* **BFS (Strict):** Breadth-First Search cluster discovery for high-quality datasets.
-* **MPF (Relaxed):** Multi-Pass Filling for recovering data in sparse maps.
+** **BFS (Strict):** Breadth-First Search cluster discovery for high-quality datasets.
+** **MPF (Relaxed):** Multi-Pass Filling for recovering data in sparse maps.
 * **Protected Pixel Filling:** A dedicated stage to recover "Protected" pixels (real grains lost to earlier filters) using ring-based orientation checks.
 * **Visualisation:** Automated generation of **Phase maps** and **Inverse Pole Figure (IPF) maps** at every stage.
 * **Checkpointing:** Automatic state saving allows runs to be resumed from the last successful stage if interrupted.
