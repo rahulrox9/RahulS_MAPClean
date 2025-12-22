@@ -8,7 +8,7 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
 * **Modular Stage Control:** Enable or disable specific cleaning steps (MAD, WSR, Hole Filling, etc.) via simple flags.
 * **Automated Protocol Selection:** Automatically selects **Strict** mode (for well-indexed data >60%) or **Relaxed** mode (for sparse data <60%) to balance preservation with restoration.
 * **MAD Filtering:** Removes noisy pixels based on high Mean Angular Deviation thresholds.
-* **Phase Wild Spike Removal (WSR):** Corrects misindexed pixels using local phase comparison (Conservative or Aggressive based on protocol).
+* **Phase Wild Spike Removal (WSR):** Corrects misindexed pixels using local phase comparison - Conservative or Aggressive based on protocol.
 * **Orientation WSR:** Corrects orientation spikes with specific twin-boundary handling (currently optimised for Anorthite).
 - **Adaptive Hole Filling:**
   - **BFS (Strict):** Breadth-First Search cluster discovery for high-quality datasets.
