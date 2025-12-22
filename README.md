@@ -78,7 +78,7 @@ addpath(genpath('path_to_MAPClean'));
 The parameters are stored in a global `params` structure. Defaults used in the code are:
 
 | Parameter | Default | Description |
-| :--- | :--- | :--- |
+| :--- | :----- | :--- |
 | `madThreshold` | 0.9 rad | Threshold for MAD filtering. |
 | `radius_phase` | 3 | Kernel radius for Phase WSR. |
 | `min_dom_frac` | 0.5 | Min dominant phase fraction for Relaxed phase flipping. |
