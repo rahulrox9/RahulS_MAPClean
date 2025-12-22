@@ -75,7 +75,7 @@ addpath(genpath('path_to_MAPClean'));
 
 ## Parameters
 
-The parameters are stored in a global `params` structure. Key defaults are:
+The parameters are stored in a global `params` structure. Defaults used in the code are:
 
 | Parameter | Default | Description |
 | :--- | :--- | :--- |
@@ -84,10 +84,10 @@ The parameters are stored in a global `params` structure. Key defaults are:
 | `min_dom_frac` | 0.5 | Min dominant phase fraction for Relaxed phase flipping. |
 | `radius_ori` | 2 | Kernel radius for Orientation WSR. |
 | `misTol_ori` | 5° | Misorientation tolerance for neighbour comparison. |
-| `radius_fill` | `[7 6 5 4 3 2 1]` | Descending radii sequence for iterative hole filling. |
-| `phaseFrac` | `Map` | A container Map linking radius to `[Ni, Frac]`. Default is `[0.35, 0.75]` (35% indexed neighbours, 75% dominant phase required). |
+| `radius_fill` | `[6 5 4 3 2 1]` | Descending radii sequence for iterative hole filling. |
+| `phaseFrac` | `Map` | A container Map linking radius to `[Ni, Frac]`. Default is `[0.4, 0.75]` (40% indexed neighbours, 75% dominant phase required). |
 | `thresholdFracRing` | 2/3 | Min dominant cluster fraction required in a ring (Protected Fill). |
-| `coverageFrac` | 1/3 | Min indexed neighbour coverage required (Protected Fill). |
+| `coverageFrac` | 0.5 | Min indexed neighbour coverage required (Protected Fill). |
 
 ## Directory Structure
 ```text
