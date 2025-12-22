@@ -35,7 +35,7 @@ git clone [https://github.com/rahulrox9/RahulS_MAPClean](https://github.com/rahu
 ```matlab
 addpath(genpath('path_to_MAPClean'));
 ```
-% 3.  Ensure MTEX is installed and initialised (`startup_mtex`).
+3.  Ensure MTEX is installed and initialised (`startup_mtex`).
 
 ## Usage
 1.  Place your raw EBSD `.ctf` files in the `DataFiles` directory.
@@ -51,61 +51,61 @@ addpath(genpath('path_to_MAPClean'));
    runProFill  = true;    % Protected Pixel Filling
    runSaveFile = true;    % Export final data
 ```
-% 4.  Adjust the **Global Parameters** if necessary (see defaults below).
-% 5.  Run the pipeline:
-%     ```matlab
-%     MAPClean
-%     ```
-% 6.  Outputs (plots, logs, and cleaned files) will appear in the `exports` directory.
-%
-% ## Workflow Details
-%
-% 1.  **Initialisation:** Loads `.ctf` data, assigns phase colours, and initialises parameters.
-% 2.  **MAD Filtering:** Pixels with a Mean Angular Deviation > `madThreshold` are set to `notIndexed`.
-% 3.  **Cropping:** Generates a sample mask to exclude the mounting background from calculations.
-% 4.  **Data Quality Assessment:**
-%     * **Strict Mode:** Activated if indexed fraction > 60%. Uses conservative WSR and BFS Hole Filling.
-%     * **Relaxed Mode:** Activated if indexed fraction < 60%. Uses aggressive WSR and Multi-Pass Filling (MPF).
-% 5.  **Wild Spike Removal (Phase & Orientation):**
-%     * Removes single-pixel spikes based on neighbour consensus.
-%     * Includes specific logic to avoid removing valid twin boundaries.
-% 6.  **Hole Filling (Unprotected):** Iterative filling using a descending radius sequence (e.g., 7 down to 1).
-% 7.  **Protected Pixel Filling:** Specifically targets pixels removed by the MAD filter that are likely part of real grains, using a "Ring-based" consistency check to restore them.
-% 8.  **Export:** Saves the final `_clean.ctf` file and parameter logs.
-%
-% ## Parameters
-%
-% The parameters are stored in a global `params` structure. Key defaults are:
-%
-% | Parameter | Default | Description |
-% | :--- | :--- | :--- |
-% | `madThreshold` | 0.9 rad | Threshold for MAD filtering. |
-% | `radius_phase` | 3 | Kernel radius for Phase WSR. |
-% | `min_dom_frac` | 0.5 | Min dominant phase fraction for Relaxed phase flipping. |
-% | `radius_ori` | 2 | Kernel radius for Orientation WSR. |
-% | `misTol_ori` | 5° | Misorientation tolerance for neighbour comparison. |
-% | `radius_fill` | `[7 6 5 4 3 2 1]` | Descending radii sequence for iterative hole filling. |
-% | `phaseFrac` | `Map` | A container Map linking radius to `[Ni, Frac]`. Default is `[0.35, 0.75]` (35% indexed neighbours, 75% dominant phase required). |
-% | `thresholdFracRing` | 2/3 | Min dominant cluster fraction required in a ring (Protected Fill). |
-% | `coverageFrac` | 1/3 | Min indexed neighbour coverage required (Protected Fill). |
-%
-% ## Directory Structure
-% ```text
-% MAPClean/
-% ├── DataFiles/          # Place input .ctf files here
-% ├── checkpoints/        # Automatic .mat saves for resuming runs
-% ├── exports/
-% │   └── MAPClean/
-% │       └── [SampleID]/ # Output PNGs and logs
-% ├── MAPClean.m          # Main script
-% └── README.md
-% ```
-%
-% ## Contributing
-% 1.  Fork the repository.
-% 2.  Create a new branch for your feature.
-% 3.  Submit a pull request with a detailed description of changes.
-%
-% ## Licence
-% This code is licensed under **GPL version 3** (see [LICENSE](LICENSE)).
-% > **Note:** This project depends on MTEX (GPLv3). Users must have valid licences for any proprietary MATLAB toolboxes used.
+4.  Adjust the **Global Parameters** if necessary (see defaults below).
+5.  Run the pipeline:
+```matlab
+   MAPClean
+```
+6.  Outputs (plots, logs, and cleaned files) will appear in the `exports` directory.
+
+## Workflow Details
+
+1.  **Initialisation:** Loads `.ctf` data, assigns phase colours, and initialises parameters.
+2.  **MAD Filtering:** Pixels with a Mean Angular Deviation > `madThreshold` are set to `notIndexed`.
+3.  **Cropping:** Generates a sample mask to exclude the mounting background from calculations.
+4.  **Data Quality Assessment:**
+    * **Strict Mode:** Activated if indexed fraction > 60%. Uses conservative WSR and BFS Hole Filling.
+    * **Relaxed Mode:** Activated if indexed fraction < 60%. Uses aggressive WSR and Multi-Pass Filling (MPF).
+5.  **Wild Spike Removal (Phase & Orientation):**
+    * Removes single-pixel spikes based on neighbour consensus.
+    * Includes specific logic to avoid removing valid twin boundaries.
+6.  **Hole Filling (Unprotected):** Iterative filling using a descending radius sequence (e.g., 7 down to 1).
+7.  **Protected Pixel Filling:** Specifically targets pixels removed by the MAD filter that are likely part of real grains, using a "Ring-based" consistency check to restore them.
+8.  **Export:** Saves the final `_clean.ctf` file and parameter logs.
+
+## Parameters
+
+The parameters are stored in a global `params` structure. Key defaults are:
+
+| Parameter | Default | Description |
+| :--- | :--- | :--- |
+| `madThreshold` | 0.9 rad | Threshold for MAD filtering. |
+| `radius_phase` | 3 | Kernel radius for Phase WSR. |
+| `min_dom_frac` | 0.5 | Min dominant phase fraction for Relaxed phase flipping. |
+| `radius_ori` | 2 | Kernel radius for Orientation WSR. |
+| `misTol_ori` | 5° | Misorientation tolerance for neighbour comparison. |
+| `radius_fill` | `[7 6 5 4 3 2 1]` | Descending radii sequence for iterative hole filling. |
+| `phaseFrac` | `Map` | A container Map linking radius to `[Ni, Frac]`. Default is `[0.35, 0.75]` (35% indexed neighbours, 75% dominant phase required). |
+| `thresholdFracRing` | 2/3 | Min dominant cluster fraction required in a ring (Protected Fill). |
+| `coverageFrac` | 1/3 | Min indexed neighbour coverage required (Protected Fill). |
+
+## Directory Structure
+```text
+MAPClean/
+├── DataFiles/          # Place input .ctf files here
+├── checkpoints/        # Automatic .mat saves for resuming runs
+├── exports/
+│   └── MAPClean/
+│       └── [SampleID]/ # Output PNGs and logs
+├── MAPClean.m          # Main script
+└── README.md
+```
+
+## Contributing
+1.  Fork the repository.
+2.  Create a new branch for your feature.
+3.  Submit a pull request with a detailed description of changes.
+
+## Licence
+This code is licensed under **GPL version 3** (see [LICENSE](LICENSE)).
+> **Note:** This project depends on MTEX (GPLv3). Users must have valid licences for any proprietary MATLAB toolboxes used.
