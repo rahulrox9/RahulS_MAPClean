@@ -1,5 +1,17 @@
-%% MAPClean – Microstructurally Adaptive Pixel-Level Cleaning)
+%% MAPClean – Microstructurally Adaptive Pixel-Level Cleaning
 %
+% Description: 
+%   This script performs automated, adaptive cleaning of EBSD data using 
+%   Microstructurally Adaptive Pixel-Level (MAP) logic. It includes stages 
+%   for MAD filtering, wild spike removal (phase and orientation), and 
+%   adaptive hole filling (unprotected and protected).
+%
+% Dependencies: 
+%   MTEX Toolbox (Tested on version 6.0.0)
+%
+% Author: Rahul Subbaraman (University of Manchester
+% Date: December 2025
+
 clc; clear; close all;
 addpath(genpath(pwd)); 
 import mtex.*;
@@ -15,12 +27,12 @@ runMAD      = true;    % Mean Angular Deviation Filter
 runCrop     = true;    % Sample Mask/Cropping
 runPhaseWSR = true;    % Phase Wild Spike Removal
 runOriWSR   = true;    % Orientation Wild Spike Removal
-runHoleFill = true;    % Standard Hole Filling (BFS/MPF)
+runHoleFill = true;    % Standard 'unprotected' Hole Filling (BFS/MPF)
 runProFill  = true;    % Protected Pixel Filling (Protected Holes)
 runSaveFile = true;    % Export final EBSD and parameters
 
 %% --- 1B. Parameters (Global Configuration) ---
-% NOTE: The 'global' keyword is used to access this struct in all functions.
+% NOTE: The 'global' keyword is used to access this struct in all functions
 global params
 disp('Initialising Parameters...');
 
@@ -28,20 +40,22 @@ params.exportRes      = 300;        % dpi for figure export resolution
 params.madThreshold   = 0.9;        % radians, MAD filter threshold
 
 % Phase WSR parameters
-params.radius_phase   = 2;          % WSR kernel radius (in pixels)
-params.min_dom_frac   = 0.5;        % Minimum dominant phase fraction for 'aggressive' flip
-params.numPasses      = 25;         % Number of passes (unused, kept for consistency)
+params.radius_phase   = 3;          % WSR kernel radius (in pixels)
+params.min_dom_frac   = 0.5;        % Minimum dominant phase fraction for 'Relaxed' flip
 
 % Orientation WSR parameters
 params.misTol_ori     = 5*degree;   % Orientation misorientation tolerance for clustering
 params.thresholdFrac  = 0.75;       % Minimum dominant cluster fraction for WSR (Strict)
-params.minLead        = 2;          % Minimum lead count for WSR (Relaxed/Aggressive)
-params.scaleLead      = 0.1;        % Scaling factor for required lead (Relaxed/Aggressive)
+params.minLead        = 2;          % Minimum lead count for WSR (Relaxed)
+params.scaleLead      = 0.1;        % Scaling factor for required lead (Relaxed)
 params.minFrac_ori    = 0.25;       % Minimum fraction of similar neighbours to avoid removal (Pre-filter)
 params.radius_ori     = 2;          % WSR kernel radius (in pixels)
 
 % Hole-filling parameters
-params.radius_fill    = [6 5 4 3 2 1]; % Radii used for sequential filling
+% Strategy: Iterative filling from coarse (6, here) to fine (1) radii allows large 
+% holes to be filled by stable macro-trends first, refining detail as the kernel shrinks.
+params.radius_fill    = [6 5 4 3 2 1]; 
+
 % Map(radius) -> [Ni_thresh, fracDom_thresh] 
 params.phaseFrac    = containers.Map('KeyType','double','ValueType','any');
 params.phaseFrac(6) = [0.4 0.75];
@@ -53,7 +67,7 @@ params.phaseFrac(1) = [0.4 0.75];
 
 % Protected Hole-filling parameters
 params.thresholdFracRing  = 2/3;    % Minimum dominant cluster fraction in a ring
-params.coverageFrac       = 2/3;    % Minimum indexed neighbour coverage in the kernel
+params.coverageFrac       = 0.5;    % Minimum indexed neighbour coverage in the kernel
 
 disp('✔ Parameters initialised');
 
@@ -61,10 +75,13 @@ disp('✔ Parameters initialised');
 
 %% --- 2. Directories and Setup ---
 dataDir       = fullfile(pwd,'DataFiles');
+
+% File selection: Use wildcard (*.ctf) for generic processing
 fileList      = dir(fullfile(dataDir, '*.ctf'));
-fileList      = fileList(~contains({fileList.name}, '_')); 
+% fileList      = fileList(~contains({fileList.name}, '_')); % Exclude files with underscore since _ implies preocessed in my code
+
 checkpointDir = fullfile(pwd,'checkpoints');
-exportDir     = fullfile(pwd,'exports');
+exportDir     = fullfile(pwd,'exports/MAPClean');
 % Create directories if they do not exist
 if ~exist(checkpointDir,'dir'), mkdir(checkpointDir); end
 if ~exist(exportDir,'dir'), mkdir(exportDir); end
@@ -184,7 +201,7 @@ for fi = 1:numel(fileList)
     fracNotIndexed = sum(validPhaseIds == notIndexedId) / numel(validPhaseIds);
     
     fprintf('\n--- Data Quality Assessment ---\n');
-    if fracNotIndexed < 0.75
+    if fracNotIndexed < 0.60
         runStrict = true;
         fprintf('✔ Data sufficiently indexed (%.2f%% notIndexed). **STRICT mode** selected.\n', fracNotIndexed*100);
     else
@@ -202,7 +219,7 @@ for fi = 1:numel(fileList)
         % Phase WSR (STRICT)
         if runPhaseWSR
             fprintf('--- Running Phase WSR (Strict) ---\n');
-            [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR(ebsd, sampleName, exportPath, sampleMask);
+            [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_strict(ebsd, sampleName, exportPath, sampleMask);
             save(phaseFile,'ebsd_phase','phaseMapClean','oriQuatClean','protectedMask');
             fprintf('✔ Phase WSR saved\n'); ebsd = ebsd_phase;
         elseif exist(phaseFile,'file')
@@ -224,11 +241,11 @@ for fi = 1:numel(fileList)
             load(oriFile,'ebsd_ori','phaseMapClean','oriQuatClean'); ebsd = ebsd_ori;
             fprintf('✔ Loaded existing Orientation WSR checkpoint.\n');
         end
-    else % RELAXED Protocol (Aggressive Phase WSR)
-        % Phase WSR (RELAXED/Aggressive)
+    else % RELAXED Protocol 
+        % Phase WSR (RELAXED)
         if runPhaseWSR
-            fprintf('--- Running Phase WSR (Aggressive) ---\n');
-            [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_aggressive(ebsd, sampleName, exportPath, sampleMask);
+            fprintf('--- Running Phase WSR (Relaxed) ---\n');
+            [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_Relaxed(ebsd, sampleName, exportPath, sampleMask);
             save(phaseFile,'ebsd_phase','phaseMapClean','oriQuatClean','protectedMask');
             fprintf('✔ Phase WSR saved\n'); 
             ebsd = ebsd_phase;
@@ -318,15 +335,12 @@ end
 %% EBSD Data Cleaning Helper Functions
 % Contents:
 %   1. MAD Filter
-%   2. Phase WSR (Strict & Aggressive)
+%   2. Phase WSR (Strict & Relaxed)
 %   3. Orientation WSR
 %   4. Mean Orientation Calculations
 %   5. Hole Filling (BFS & MPF)
 %   6. Protected Filling
 %   7. General Utilities (Stats, Plots, Residuals)
-%
-% NOTE: These functions rely on the existence of 'global params' defined 
-% in the calling script.
 %
 
 %% =========================================================================
@@ -335,6 +349,15 @@ end
 
 function [ebsd_mad, badPixels] = doMADFilter(ebsd, sampleName, exportPath)
 % DOMADFILTER Applies a Mean Angular Deviation (MAD) filter.
+%
+% Inputs:
+%   ebsd       - MTEX EBSD variable containing the raw data.
+%   sampleName - String; name of the sample (used for logging/naming).
+%   exportPath - String; directory path for saving debug plots.
+%
+% Outputs:
+%   ebsd_mad   - The EBSD data with pixels > MAD_threshold set to 'notIndexed'.
+%   badPixels  - Logical mask indicating which pixels were removed.
     global params;
     fprintf('\n--- Applying MAD Filter (Threshold = %.2f rad) ---\n', params.madThreshold);
     % --- Identify bad pixels ---
@@ -357,8 +380,20 @@ end
 %   2. Phase Wild Spike Removal (WSR)
 % =========================================================================
 
-function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR(ebsd, sampleName, exportPath, sampleMask)
-% DOPHASESWSR Performs Phase WSR (Strict Protocol).
+function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_strict(ebsd, sampleName, exportPath, sampleMask)
+% DOPHASEWSR_STRICT Performs Phase Wild Spike Removal (Strict Protocol).
+%
+% Inputs:
+%   ebsd       - EBSD object (post-MAD filter).
+%   sampleName - String; sample name.
+%   exportPath - String; export directory.
+%   sampleMask - Logical mask defining the valid sample area (exclude background).
+%
+% Outputs:
+%   ebsd_phase    - Updated EBSD object.
+%   phaseMapClean - 2D Matrix of phase IDs.
+%   oriQuatClean  - 3D Matrix (NxMx4) of orientation quaternions.
+%   protectedMask - Logical mask of pixels removed during this step.
     global params;
     fprintf('Starting Phase WSR (Radius = %d) \n', params.radius_phase);
     phases = ebsd.mineralList;
@@ -473,12 +508,21 @@ function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR(e
     plotIPFMapPhases(ebsd_phase, sampleName, exportPath, 'PhaseWSR', params.exportRes);   
 end
 
-function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_aggressive(ebsd, sampleName, exportPath, sampleMask)
-% DOPHASESWSR_AGGRESSIVE Performs Phase WSR (Aggressive/Relaxed Protocol).
+function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_Relaxed(ebsd, sampleName, exportPath, sampleMask)
+% DOPHASEWSR_RELAXED Performs Phase Wild Spike Removal (Relaxed Protocol).
+%
+% Inputs:
+%   ebsd       - EBSD object.
+%   sampleName - String.
+%   exportPath - String.
+%   sampleMask - Logical mask.
+%
+% Outputs:
+%   ebsd_phase, phaseMapClean, oriQuatClean, protectedMask (as above).
     global params;
     minDomFrac = params.min_dom_frac;
       
-    fprintf('\n--- Starting Phase WSR (Radius = %d, Aggressive) ---\n', params.radius_phase);
+    fprintf('\n--- Starting Phase WSR (Radius = %d, Relaxed) ---\n', params.radius_phase);
     phases = ebsd.mineralList;
     Nrow = ebsd.size(1); Ncol = ebsd.size(2);
     phaseMapoG = reshape(double(ebsd.phaseId), Nrow, Ncol);
@@ -565,8 +609,8 @@ function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_a
                 
                 if Nneighbours >= 2
                     currentQ_vec = squeeze(oriQuatClean(i,j,:))';
-                    % Must call the aggressive Lead-Check version for smoothing
-                    [meanOri, ~] = calc_mean_ori_wsr_aggressive(neighbourQuatsList, params.misTol_ori, Nneighbours, currentQ_vec);
+                    % Must call the relaxed Lead-Check version for smoothing
+                    [meanOri, ~] = calc_mean_ori_wsr_Relaxed(neighbourQuatsList, params.misTol_ori, Nneighbours, currentQ_vec);
                     oriQuatClean(i,j,:) = [meanOri.a, meanOri.b, meanOri.c, meanOri.d];
                 end
             end
@@ -598,7 +642,19 @@ end
 % =========================================================================
 
 function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQuatClean, phaseMapClean, MinPhaseIds, sampleName, exportPath, sampleMask)  
-% DOORITENTATIONWSR Performs Orientation WSR, including twin checks for Anorthite.
+% DOORIENTATIONWSR Performs Orientation WSR, including twin checks for Anorthite.
+%
+% Inputs:
+%   ebsd          - EBSD object (post-Phase WSR).
+%   oriQuatClean  - 3D Matrix of quaternions (NxMx4).
+%   phaseMapClean - 2D Matrix of phase IDs.
+%   MinPhaseIds   - Vector of IDs for phases to clean.
+%   sampleName/exportPath - Logging strings.
+%
+% Outputs:
+%   ebsd_ori      - Updated EBSD object.
+%   oriQuatClean  - Updated orientation quaternions.
+%   phaseMapClean - Updated phase map (pixels may be removed if < 2 neighbours).
     global params;
     radius_ori  = params.radius_ori;
     misTol_ori  = params.misTol_ori;
@@ -792,7 +848,7 @@ function [meanOri, clusterSizes] = calc_mean_ori_wsr_normal(qList, misTol_ori, N
     meanOri = closestClusterMean;
 end
 
-function [meanOri, clusterSizes] = calc_mean_ori_wsr_aggressive(qList, misTol_ori, Nneighbours, currentQ_vec)
+function [meanOri, clusterSizes] = calc_mean_ori_wsr_Relaxed(qList, misTol_ori, Nneighbours, currentQ_vec)
 % CALC_MEAN_ORI_WSR_AGGRESSIVE Calculates mean orientation using hierarchical clustering and Lead check (Aggressive).
     global params
     minLead = params.minLead;
@@ -849,6 +905,14 @@ end
 
 function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingBFS(ebsd, oriQuatClean, phaseMapClean, radii, protectedMask, sampleMask)
 % DOHOLEFILLINGBFS Performs Breadth-First Search (BFS) based hole filling (Strict Protocol).
+%
+% Inputs:
+%   ebsd, oriQuatClean, phaseMapClean, radii, protectedMask, sampleMask.
+%
+% Outputs:
+%   ebsd_fill     - Updated EBSD object.
+%   phaseMapClean - 2D Map of phases.
+%   oriQuatClean  - 3D Matrix of quaternions.
     global params;
     misTol_ori = params.misTol_ori;
     phaseFrac_all = params.phaseFrac;   % map(radius) -> [Ni_thresh, fracDom_thresh]
@@ -1073,6 +1137,14 @@ end
 
 function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingMPF(ebsd, oriQuatClean, phaseMapClean, radii, protectedMask, sampleMask)
 % DOHOLEFILLINGMPF Performs Multi-Pass Filler (MPF) based hole filling (Relaxed Protocol).
+%
+% Inputs:
+%   ebsd, oriQuatClean, phaseMapClean, radii, protectedMask, sampleMask.
+%
+% Outputs:
+%   ebsd_fill     - Updated EBSD object.
+%   phaseMapClean - 2D Map of phases.
+%   oriQuatClean  - 3D Matrix of quaternions.
     global params
     scaleLead = params.scaleLead;
     minLead = params.minLead;
@@ -1157,7 +1229,7 @@ function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingMPF(ebsd, oriQu
                 % Dominant Orientations
                 oriList = reshape(winOri, [], 4);
                 qList = oriList(maskValid(:), :);
-                qMean = calc_mean_ori_hole_relaxed(qList, neighPhases, domPhase, misTol_ori, innerKernel, outerKernel, radius, maskValid, scaleLead, minLead);
+                qMean = calc_mean_ori_hole_Relaxed(qList, neighPhases, domPhase, misTol_ori, innerKernel, outerKernel, radius, maskValid, scaleLead, minLead);
                 % Only assign phase & orientation if qMean is valid
                 if ~isempty(qMean)
                     phaseMapClean(i,j) = domPhase;
@@ -1196,7 +1268,7 @@ function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingMPF(ebsd, oriQu
     end
 end
 
-function [meanOri, clusterSizes] = calc_mean_ori_hole_relaxed(qList, neighPhases, domPhase, misTol_ori, innerKernel, outerKernel, radius, maskValid, scaleLead, minLead)
+function [meanOri, clusterSizes] = calc_mean_ori_hole_Relaxed(qList, neighPhases, domPhase, misTol_ori, innerKernel, outerKernel, radius, maskValid, scaleLead, minLead)
 % CALC_MEAN_ORI_HOLE_RELAXED Calculates mean orientation for relaxed hole filling (Lead Check + Ring Fallback).
     clusterSizes = [];
     
@@ -1286,6 +1358,14 @@ end
 
 function [ebsd_pro, phaseMapClean, oriQuatClean] = doProtectedFilling(ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask)  
 % DOPROTECTEDFILLING Fills pixels previously flagged as protected (high MAD/WSR) using specific rules.
+%
+% Inputs:
+%   ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask.
+%
+% Outputs:
+%   ebsd_pro       - Updated EBSD object.
+%   phaseMapClean  - Updated Phase Map.
+%   oriQuatClean   - Updated Orientation Quaternions.
     global params
     radii = params.radius_fill; 
     coverageFrac = params.coverageFrac;
@@ -1526,4 +1606,22 @@ function savePNG(figHandle,filenameStem,exportPath,res)
     close(figHandle);
     fprintf('Saved: %s.png\n', filenameStem);
 end
-
+%%
+function plotIPFMaps(ebsdObj, sampleName, exportPath, suffix, res)
+% PLOTIPFMAPPHASES Generates IPF-Z maps for each indexed phase and exports them.
+    phases = ebsdObj.mineralList;
+    for i = 1:numel(phases)
+        pname = phases{i};
+        if strcmpi(pname,'notIndexed'), continue; end
+        ebsdPhase = ebsdObj(pname);
+        if isempty(ebsdPhase), continue; end
+        ipfKey = ipfColorKey(ebsdPhase);
+        ipfKey.inversePoleFigureDirection = vector3d.Z;
+        colors = ipfKey.orientation2color(ebsdPhase.orientations);
+        f = figure('Visible','off');
+        plot(ebsdPhase, colors);
+        axis equal;
+        savePNG(f, sprintf('%s_IPFMap_%s_%s', ...
+            sampleName, pname, suffix), exportPath, res);
+    end
+end
