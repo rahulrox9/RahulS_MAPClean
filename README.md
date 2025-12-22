@@ -18,8 +18,8 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
   * **Checkpointing:** Automatic state saving allows runs to be resumed from the last successful stage if interrupted.
 
 ## Requirements
-* **MATLAB** (Tested on 2016b and newer)
-* **MTEX Toolbox** (v5.7.x or newer recommended) – [Download MTEX](https://mtex-toolbox.github.io/)
+* **MATLAB** (Tested on 2024b)
+* **MTEX Toolbox** (Tested on 6.0.0) – [Download MTEX](https://mtex-toolbox.github.io/)
 * **Image Processing Toolbox**
 * **Statistics and Machine Learning Toolbox**
 
@@ -32,26 +32,25 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
 git clone [https://github.com/rahulrox9/RahulS_MAPClean](https://github.com/rahulrox9/RahulS_MAPClean)
 ```
 2.  Add the repository to your MATLAB path:
-%     ```matlab
-%     addpath(genpath('path_to_MAPClean'));
-%     ```
+```matlab
+addpath(genpath('path_to_MAPClean'));
+```
 % 3.  Ensure MTEX is installed and initialised (`startup_mtex`).
-%
-% ## Usage
-%
-% 1.  Place your raw EBSD `.ctf` files in the `DataFiles` directory.
-% 2.  Open `MAPClean.m`. The script is configured to process all `*.ctf` files in the folder.
-% 3.  Set the **Stage Control Flags** to determine which steps to run:
-%     ```matlab
-%     runStart    = true;    % Initial plots
-%     runMAD      = true;    % MAD Filter
-%     runCrop     = true;    % Sample Mask/Cropping
-%     runPhaseWSR = true;    % Phase Wild Spike Removal
-%     runOriWSR   = true;    % Orientation Wild Spike Removal
-%     runHoleFill = true;    % Hole Filling (BFS/Strict or MPF/Relaxed)
-%     runProFill  = true;    % Protected Pixel Filling
-%     runSaveFile = true;    % Export final data
-%     ```
+
+## Usage
+1.  Place your raw EBSD `.ctf` files in the `DataFiles` directory.
+2.  Open `MAPClean.m`. The script is configured to process all `*.ctf` files in the folder.
+3.  Set the **Stage Control Flags** to determine which steps to run:
+```matlab
+   runStart    = true;    % Initial plots
+   runMAD      = true;    % MAD Filter
+   runCrop     = true;    % Sample Mask/Cropping
+   runPhaseWSR = true;    % Phase Wild Spike Removal
+   runOriWSR   = true;    % Orientation Wild Spike Removal
+   runHoleFill = true;    % Hole Filling (BFS/Strict or MPF/Relaxed)
+   runProFill  = true;    % Protected Pixel Filling
+   runSaveFile = true;    % Export final data
+```
 % 4.  Adjust the **Global Parameters** if necessary (see defaults below).
 % 5.  Run the pipeline:
 %     ```matlab
