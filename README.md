@@ -2,109 +2,111 @@
 
 **A modular MATLAB pipeline for automated cleaning of Electron Backscatter Diffraction datasets**
 
-MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction (EBSD) datasets. It applies **Mean Angular Deviation (MAD) filtering**, **phase and orientation wild spike removal**, and iterative **Hole Filling** using Breadth-First Search (BFS) based cluster discovery or Multi-Pass Filling (MPF) to produce high-quality, microstructure-consistent EBSD data. The pipeline includes visualisation tools and checkpoint support for long-running datasets.
+MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction (EBSD) datasets. It employs an intelligent **"Strict" vs. "Relaxed"** protocol selection based on data quality to apply the most appropriate cleaning strategy. The pipeline features **Mean Angular Deviation (MAD) filtering**, **phase and orientation wild spike removal**, and adaptive **Hole Filling** (using Breadth-First Search or Multi-Pass Filling) to produce high-quality, microstructure-consistent EBSD data.
 
-
-## Features
-- Modular, stage-wise cleaning of Electron Backscatter Diffraction datasets  
-- **Mean Angular Deviation filtering:** Removes noisy pixels based on high mean angular deviation.  
-- **Phase Wild Spike Removal:** Corrects misindexed pixels by local phase comparison.
-- **Orientation Wild Spike Removal:** Corrects orientation spikes, including dedicated logic for twin handling.  
-- **Iterative Hole Filling:** Multi-radius filling of unindexed pixels using:
-  -- **Breadth-First Search** (BFS) based cluster discovery for strict cleaning.
-  -- **Multi-Pass Filling** (MPF) for relaxed cleaning. 
-- Automated generation of **phase maps** and **inverse pole figure (IPF) maps**.  
-- Checkpoint-based workflow for reproducibility and resuming interrupted runs.  
-- Fully customisable parameters for different datasets.  
+## Key Features
+* **Modular Stage Control:** Enable or disable specific cleaning steps (MAD, WSR, Hole Filling, etc.) via simple flags.
+* **Automated Protocol Selection:** Automatically selects **Strict** mode (for well-indexed data >60%) or **Relaxed** mode (for sparse data <60%) to balance preservation with restoration.
+* **MAD Filtering:** Removes noisy pixels based on high Mean Angular Deviation thresholds.
+* **Phase Wild Spike Removal (WSR):** Corrects misindexed pixels using local phase comparison (Conservative or Aggressive based on protocol).
+* **Orientation WSR:** Corrects orientation spikes with specific twin-boundary handling (currently optimised for Anorthite).
+* **Adaptive Hole Filling:**
+  * **BFS (Strict):** Breadth-First Search cluster discovery for high-quality datasets.
+  * **MPF (Relaxed):** Multi-Pass Filling for recovering data in sparse maps.
+  * **Protected Pixel Filling:** A dedicated stage to recover "Protected" pixels (real grains lost to earlier filters) using ring-based orientation checks.
+  * **Visualisation:** Automated generation of **Phase maps** and **Inverse Pole Figure (IPF) maps** at every stage.
+  * **Checkpointing:** Automatic state saving allows runs to be resumed from the last successful stage if interrupted.
 
 ## Requirements
-- **MATLAB** (version 2016b or newer)  
-- **MTEX Toolbox** ([https://mtex-toolbox.github.io/](https://mtex-toolbox.github.io/))  
-- **Image Processing Toolbox**  
-- **Statistics and Machine Learning Toolbox**  
-> Note: Proprietary MATLAB toolboxes require a valid licence to run the code.  
+* **MATLAB** (Tested on 2016b and newer)
+* **MTEX Toolbox** (v5.7.x or newer recommended) – [Download MTEX](https://mtex-toolbox.github.io/)
+* **Image Processing Toolbox**
+* **Statistics and Machine Learning Toolbox**
+
+> **Note:** Proprietary MATLAB toolboxes require a valid licence to run.
 
 ## Installation
 
-1. Clone this repository:
+1.  Clone this repository:
 ```bash
-git clone https://github.com/rahulrox9/RahulS_MAPClean
+git clone [https://github.com/rahulrox9/RahulS_MAPClean](https://github.com/rahulrox9/RahulS_MAPClean)
 ```
-2. Add the repository to your MATLAB path:
- ```matlab
- addpath(genpath('path_to_MAPClean'));
- ```
-3. Ensure the MTEX and required proprietary MATLAB toolboxes are installed and properly added to your MATLAB path.
-
-## Usage
-1. Place raw EBSD `.ctf` files in the `DataFiles` directory.  
-2. Open `MAPClean.m` and set stage control flags:
-```matlab
-runStart    = true;    % Initial plots
-runMAD      = true;    % Mean Angular Deviation Filter
-runCrop     = true;    % Sample Mask/Cropping
-runPhaseWSR = true;    % Phase Wild Spike Removal
-runOriWSR   = true;    % Orientation Wild Spike Removal
-runHoleFill = true;    % Standard Hole Filling (BFS/MPF)
-runProFill  = true;    % Protected Pixel Filling (Protected Holes)
-runSaveFile = true;    % Export final EBSD and parameters
-```
-3. Adjust parameters in the `params` structure.  
-4. Run the pipeline:
-```matlab
-MAPClean
-```
-5. Check outputs in the `exports` directory.
-
-## Workflow Overview
-1. **Initialisation** – load Electron Backscatter Diffraction data and set parameters.  
-2. **Mean Angular Deviation filtering** – remove pixels with high deviation from neighbours.  
-3. **Data quality assessment** – determine strict or relaxed cleaning mode based on dataset quality.  
-4. **Phase wild spike removal** – remove misindexed pixels by comparing to neighbouring pixels.  
-5. **Orientation wild spike removal** – remove pixels with unusual orientations, including twin handling.  
-6. **Filling unindexed pixels** – Breadth-First Search based, iterative filling:  
-- Clusters of connected unindexed pixels are discovered using 8-connectivity  
-- Only pixels that are not protected are included in cluster discovery  
-- Each cluster is processed iteratively based on the dominant phase fraction and the minimum number of valid neighbours  
-- Cluster information is logged only if pixels are successfully filled (default: clusters larger than ten pixels)  
-7. **Export** – save cleaned EBSD file, phase maps, and inverse pole figure maps  
-
-## Checkpoints and Resumable Workflow
-- At the end of each cleaning stage, the pipeline automatically saves a checkpoint as a `.mat` file in the `exports` directory.
-- These checkpoint files store the current state of the EBSD data, phase maps, and orientation data.
-- If a stage is skipped (for example, by setting its control flag to `false`), the pipeline can automatically load the corresponding checkpoint to resume processing from the last completed stage.
-- This ensures that long-running datasets do not need to be reprocessed from the beginning if interrupted.
-- Checkpoints are named according to the stage: `*_ebsd_mad.mat`, `*_ebsd_phase.mat`, `*_ebsd_ori.mat`,`*_ebsd_fill.mat`,`*_ebsd_pro.mat`.
-
-## Parameters
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `exportRes` | 300 | (dots per inch) Resolution for exported figures (phase maps and inverse pole figure maps) |
-| `madThreshold` | 0.9 | (radians) Maximum deviation allowed for a pixel; higher deviation pixels are set to unindexed |
-| `radius_phase` | 2 | Neighbourhood radius for phase wild spike removal |
-| `min_dom_frac` | 0.50 | Minimum fraction of dominant phase among neighbours required to fill a pixel |
-| `radius_ori` | 2 | Neighbourhood radius for orientation wild spike removal |
-| `misTol_ori` | 5° | Maximum misorientation tolerated when comparing neighbouring orientations |
-| `thresholdFrac` | 0.75 | Minimum fraction of dominant cluster required to compute mean orientation during orientation wild spike removal |
-| `minLead` | 2 | Minimum lead count for WSR (Relaxed/Aggressive) |
-| `scaleLead` | 0.1 | Scaling factor for required lead (Relaxed/Aggressive) |
-| `minFrac_ori` | 0.25 | Minimum fraction of similar neighbours required for orientation wild spike removal |
-| `radius_fill` | [6 5 4 3 2 1] | Sequence of neighbourhood radii used for multi-pass BFS filling of unindexed pixels |
-| `phaseFrac` | set individually for each radius | Adaptive phase fraction based on the neighbourhood radius; two-element vector `[a b]`, where `a` is the minimum fraction of indexed neighbours required for hole filling, and `b` is the minimum fraction of the dominant phase among neighbours |
-| `thresholdFracRing` | 2/3 | Minimum dominant cluster fraction in a ring |
-| `coverageFrac` | 2/3 | Minimum indexed neighbour coverage in the kernel |
-
-## Outputs
-- **Cleaned EBSD files** (`*_clean.ctf`)  
-- **Visualisations:** Phase maps and Inverse Pole Figure maps in PNG format.
-- **Checkpoints:** fMAT files saved in the `checkpoints` directory for each stage. 
-- **Logging:** Cluster-level statistics are printed using MATLAB diary and exported to text files in the exports directory for review. 
-
-## Contributing
-- Fork the repository  
-- Create a new branch for your changes  
-- Submit a pull request with a detailed description  
-
-## Licence
-This code is licensed under **GPL version 3** (see [LICENSE](LICENSE)).  
-> Note: This project depends on MTEX (GPLv3) and proprietary MATLAB toolboxes. Users must have a valid MATLAB licence to run the code.
+2.  Add the repository to your MATLAB path:
+%     ```matlab
+%     addpath(genpath('path_to_MAPClean'));
+%     ```
+% 3.  Ensure MTEX is installed and initialised (`startup_mtex`).
+%
+% ## Usage
+%
+% 1.  Place your raw EBSD `.ctf` files in the `DataFiles` directory.
+% 2.  Open `MAPClean.m`. The script is configured to process all `*.ctf` files in the folder.
+% 3.  Set the **Stage Control Flags** to determine which steps to run:
+%     ```matlab
+%     runStart    = true;    % Initial plots
+%     runMAD      = true;    % MAD Filter
+%     runCrop     = true;    % Sample Mask/Cropping
+%     runPhaseWSR = true;    % Phase Wild Spike Removal
+%     runOriWSR   = true;    % Orientation Wild Spike Removal
+%     runHoleFill = true;    % Hole Filling (BFS/Strict or MPF/Relaxed)
+%     runProFill  = true;    % Protected Pixel Filling
+%     runSaveFile = true;    % Export final data
+%     ```
+% 4.  Adjust the **Global Parameters** if necessary (see defaults below).
+% 5.  Run the pipeline:
+%     ```matlab
+%     MAPClean
+%     ```
+% 6.  Outputs (plots, logs, and cleaned files) will appear in the `exports` directory.
+%
+% ## Workflow Details
+%
+% 1.  **Initialisation:** Loads `.ctf` data, assigns phase colours, and initialises parameters.
+% 2.  **MAD Filtering:** Pixels with a Mean Angular Deviation > `madThreshold` are set to `notIndexed`.
+% 3.  **Cropping:** Generates a sample mask to exclude the mounting background from calculations.
+% 4.  **Data Quality Assessment:**
+%     * **Strict Mode:** Activated if indexed fraction > 60%. Uses conservative WSR and BFS Hole Filling.
+%     * **Relaxed Mode:** Activated if indexed fraction < 60%. Uses aggressive WSR and Multi-Pass Filling (MPF).
+% 5.  **Wild Spike Removal (Phase & Orientation):**
+%     * Removes single-pixel spikes based on neighbour consensus.
+%     * Includes specific logic to avoid removing valid twin boundaries.
+% 6.  **Hole Filling (Unprotected):** Iterative filling using a descending radius sequence (e.g., 7 down to 1).
+% 7.  **Protected Pixel Filling:** Specifically targets pixels removed by the MAD filter that are likely part of real grains, using a "Ring-based" consistency check to restore them.
+% 8.  **Export:** Saves the final `_clean.ctf` file and parameter logs.
+%
+% ## Parameters
+%
+% The parameters are stored in a global `params` structure. Key defaults are:
+%
+% | Parameter | Default | Description |
+% | :--- | :--- | :--- |
+% | `madThreshold` | 0.9 rad | Threshold for MAD filtering. |
+% | `radius_phase` | 3 | Kernel radius for Phase WSR. |
+% | `min_dom_frac` | 0.5 | Min dominant phase fraction for Relaxed phase flipping. |
+% | `radius_ori` | 2 | Kernel radius for Orientation WSR. |
+% | `misTol_ori` | 5° | Misorientation tolerance for neighbour comparison. |
+% | `radius_fill` | `[7 6 5 4 3 2 1]` | Descending radii sequence for iterative hole filling. |
+% | `phaseFrac` | `Map` | A container Map linking radius to `[Ni, Frac]`. Default is `[0.35, 0.75]` (35% indexed neighbours, 75% dominant phase required). |
+% | `thresholdFracRing` | 2/3 | Min dominant cluster fraction required in a ring (Protected Fill). |
+% | `coverageFrac` | 1/3 | Min indexed neighbour coverage required (Protected Fill). |
+%
+% ## Directory Structure
+% ```text
+% MAPClean/
+% ├── DataFiles/          # Place input .ctf files here
+% ├── checkpoints/        # Automatic .mat saves for resuming runs
+% ├── exports/
+% │   └── MAPClean/
+% │       └── [SampleID]/ # Output PNGs and logs
+% ├── MAPClean.m          # Main script
+% └── README.md
+% ```
+%
+% ## Contributing
+% 1.  Fork the repository.
+% 2.  Create a new branch for your feature.
+% 3.  Submit a pull request with a detailed description of changes.
+%
+% ## Licence
+% This code is licensed under **GPL version 3** (see [LICENSE](LICENSE)).
+% > **Note:** This project depends on MTEX (GPLv3). Users must have valid licences for any proprietary MATLAB toolboxes used.
