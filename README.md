@@ -6,7 +6,7 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
 
 ## Key Features
 * **Modular Stage Control:** Enable or disable specific cleaning steps (MAD, WSR, Hole Filling, etc.) via simple flags.
-* **Automated Protocol Selection:** Automatically selects **Strict** mode (for well-indexed data >60%) or **Relaxed** mode (for sparse data <60%) to balance preservation with restoration.
+* **Automated Protocol Selection:** Automatically selects **Strict** mode (for well-indexed data > qcFrac) or **Relaxed** mode (for sparse data < qcFrac) to balance preservation with restoration.
 * **MAD Filtering:** Removes noisy pixels based on high Mean Angular Deviation thresholds.
 * **Phase Wild Spike Removal (WSR):** Corrects misindexed pixels using local phase comparison - Conservative or Aggressive based on protocol.
 * **Orientation WSR:** Corrects orientation spikes with specific twin-boundary handling (currently optimised for Anorthite).
@@ -63,8 +63,8 @@ MAPClean
 2. **MAD Filtering:** Pixels with a Mean Angular Deviation > `madThreshold` are set to `notIndexed`.
 3. **Cropping:** Generates a sample mask to exclude the mounting background from calculations.
 4. **Data Quality Assessment:**
-* **Strict Mode:** Activated if indexed fraction > 60%. Uses conservative WSR and BFS Hole Filling.
-* **Relaxed Mode:** Activated if indexed fraction < 60%. Uses aggressive WSR and Multi-Pass Filling (MPF).
+* **Strict Mode:** Activated if indexed fraction > qcFrac. Uses conservative WSR and BFS Hole Filling.
+* **Relaxed Mode:** Activated if indexed fraction < qcFrac. Uses aggressive WSR and Multi-Pass Filling (MPF).
 5. **Wild Spike Removal (Phase & Orientation):**
 * Removes single-pixel spikes based on neighbour consensus.
 * Includes specific logic to avoid removing valid twin boundaries.
@@ -77,7 +77,9 @@ The parameters are stored in a global `params` structure. Defaults used in the c
 
 | Parameter | Default | Description |
 | :--- | :----- | :--- |
+| `exportRes` | 300 | dpi; Export Resolution for figures. |
 | `madThreshold` | 0.9 rad | Threshold for MAD filtering. |
+| `qcFrac` | 0.6 | Threshold for data quality check. |
 | `radius_phase` | 3 | Kernel radius for Phase WSR. |
 | `min_dom_frac` | 0.5 | Min dominant phase fraction for Relaxed phase flipping. |
 | `radius_ori` | 2 | Kernel radius for Orientation WSR. |
