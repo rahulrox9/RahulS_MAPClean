@@ -38,6 +38,7 @@ disp('Initialising Parameters...');
 
 params.exportRes      = 300;        % dpi for figure export resolution
 params.madThreshold   = 0.9;        % radians, MAD filter threshold
+params.qcfrac         = 0.6;        % fraction of indexed pixels to determine the approach
 
 % Phase WSR parameters
 params.radius_phase   = 3;          % WSR kernel radius (in pixels)
@@ -201,7 +202,7 @@ for fi = 1:numel(fileList)
     fracNotIndexed = sum(validPhaseIds == notIndexedId) / numel(validPhaseIds);
     
     fprintf('\n--- Data Quality Assessment ---\n');
-    if fracNotIndexed < 0.60
+    if fracNotIndexed < params.qcfrac 
         runStrict = true;
         fprintf('✔ Data sufficiently indexed (%.2f%% notIndexed). **STRICT mode** selected.\n', fracNotIndexed*100);
     else
@@ -1625,3 +1626,4 @@ function plotIPFMaps(ebsdObj, sampleName, exportPath, suffix, res)
             sampleName, pname, suffix), exportPath, res);
     end
 end
+
