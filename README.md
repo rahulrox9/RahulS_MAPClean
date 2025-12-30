@@ -85,7 +85,7 @@ The parameters are stored in a global `params` structure. Defaults used in the c
 | `radius_ori` | 2 | Kernel radius for Orientation WSR. |
 | `misTol_ori` | 5° | Misorientation tolerance for neighbour comparison. |
 | `radius_fill` | `[6 5 4 3 2 1]` | Descending radii sequence for iterative hole filling. |
-| `phaseFrac` | `Map` | A container Map linking radius to `[Ni, f<sub>dom<\sub>]`. Default is `[0.4, 0.75]` (40% indexed neighbours, 75% dominant phase required). |
+| `phaseFrac` | `Map` | A container Map linking radius to `[Ni, f<sub>dom</sub>]`. Default is `[0.4, 0.75]` (40% indexed neighbours, 75% dominant phase required). |
 | `thresholdFracRing` | 2/3 | Min dominant cluster fraction required in a ring (Protected Fill). |
 | `coverageFrac` | 0.5 | Min indexed neighbour coverage required (Protected Fill). |
 
