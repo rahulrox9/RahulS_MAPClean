@@ -31,6 +31,7 @@ parpool('local', maxWorkers);
 
 
 %% User Configuration
+%% --- Stage Control ---
 runStart    = true;
 runMAD      = true;
 runCrop     = true;
@@ -39,6 +40,7 @@ runOriWSR   = true;
 runHoleFill = true;
 runSaveFile = true;
 
+%% --- Parameters ---
 global params
 params.exportRes      = 300;
 params.madThreshold   = 1.0;
@@ -52,7 +54,6 @@ params.radius_ori     = 2;
 params.minLead        = 2;
 params.scaleLead      = 0.1;
 
-% [7:184, 6:136, 5:100, 4:68, 3:44, 2:20, 1:8]
 params.radius_fill_strict   = [6 5 4 3 2 1];
 params.phaseFrac_strict     = containers.Map('KeyType','double','ValueType','any');
 % Format: [Target_Count / N_disk, Threshold / Target_Count]
@@ -75,7 +76,7 @@ params.phaseFrac_relaxed(1) = [4/8 4/4];
 
 %% Directories
 dataDir = fullfile(pwd,'DataFiles');
-sampleNames = {'01a6','4N3C','024','01a2'};
+sampleNames = {'sample1','sample2'}; # samplename must match the "filename.ctf" without the ".ctf"
 fileList = cellfun(@(s) dir(fullfile(dataDir,[s '.ctf'])), sampleNames, 'UniformOutput', false);
 fileList = vertcat(fileList{:});
 checkpointDir = fullfile(pwd,'MAPClean','checkpoints');
@@ -120,13 +121,14 @@ for fi = 1:numel(fileList)
     end
     clear ForsteriteColor DiopsideColor AnorthiteColor
 
+    %% --- Checkpoint Paths ---
     madFile   = fullfile(checkpointDir, sprintf('%s_ebsd_mad.mat', sampleName));
     cropFile  = fullfile(checkpointDir, sprintf('%s_crop.mat', sampleName));
     phaseFile = fullfile(checkpointDir, sprintf('%s_ebsd_phase.mat', sampleName));
     oriFile   = fullfile(checkpointDir, sprintf('%s_ebsd_ori.mat', sampleName));
     fillFile  = fullfile(checkpointDir, sprintf('%s_ebsd_fill.mat', sampleName));
     paramFile = fullfile(checkpointDir, sprintf('%s_params.mat', sampleName));
-
+    
     ebsd = ebsd_raw;
     % START
     if runStart
@@ -277,7 +279,9 @@ for fi = 1:numel(fileList)
 
     diary off;
 end
-
+%% =========================================================================
+%  MAD FILTER
+%% =========================================================================
 function [ebsd_mad, badPixels] = doMADFilter(ebsd, sampleName, exportPath)
     % Purpose:
     %   Removes unreliable EBSD pixels using a threshold on the MAD value and
@@ -318,7 +322,9 @@ function [ebsd_mad, badPixels] = doMADFilter(ebsd, sampleName, exportPath)
 
     fprintf('✔ MAD total done (%.2f s)\n', toc(tMAD));
 end
-
+%% =========================================================================
+%  SAMPLE MASK
+%% =========================================================================
 function [sampleMask, indexedMask] = buildSampleMask(ebsd)
     % Purpose:
     %   Constructs a sample support mask from indexed pixels so that later
@@ -350,7 +356,9 @@ function [sampleMask, indexedMask] = buildSampleMask(ebsd)
         sampleMask(idx(1):idx(end), c) = true;
     end
 end
-
+%% =========================================================================
+%  PHASE WSR — STRICT
+%% =========================================================================
 function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_strict(ebsd, badPixels, sampleName, exportPath, sampleMask)
     % Purpose:
     %   Performs strict phase-wise statistical reassignment (WSR) using local
@@ -497,7 +505,9 @@ function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_s
     fprintf('✔ strict Phase WSR figure export done (%.2f s)\n', toc(tPlot));
     fprintf('✔ strict Phase WSR total done (%.2f s)\n', toc(tWSR));
 end
-
+%% =========================================================================
+%  PHASE WSR — RELAXED
+%% =========================================================================
 function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_relaxed(ebsd, badPixels, sampleName, exportPath, sampleMask)
     % Purpose:
     %   Performs relaxed phase-wise statistical reassignment (WSR) for sparse
@@ -630,7 +640,9 @@ function [ebsd_phase, phaseMapClean, oriQuatClean, protectedMask] = doPhaseWSR_r
     fprintf('✔ relaxed Phase WSR figure export done (%.2f s)\n', toc(tPlot));
     fprintf('✔ relaxed Phase WSR total done (%.2f s)\n', toc(tWSR));
 end
-
+%% =========================================================================
+%  ORIENTATION WSR 
+%% =========================================================================
 function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQuatClean, phaseMapClean, MinPhaseIds, sampleName, exportPath, sampleMask)
     % Purpose:
     %   Detects and corrects orientation outliers ("wild spikes") within each
@@ -819,7 +831,9 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
     fprintf('✔ Orientation WSR figure export done (%.2f s)\n', toc(tPlot));
     fprintf('✔ Orientation WSR total done (%.2f s)\n', toc(t0));
 end
-
+%% =========================================================================
+%  CALC MEAN ORI WSR STRICT
+%% =========================================================================
 function [meanOri, clusterSizes] = calc_mean_ori_wsr_strict(qList, misTol_ori, Nneighbours, currentQ_vec)
     % Purpose:
     %   Computes a representative local mean orientation under strict clustering rules.
@@ -871,7 +885,9 @@ function [meanOri, clusterSizes] = calc_mean_ori_wsr_strict(qList, misTol_ori, N
     end
     meanOri = closestClusterMean;
 end
-
+%% =========================================================================
+%  CALC MEAN ORI WSR RELAXED
+%% =========================================================================
 function [meanOri, clusterSizes] = calc_mean_ori_wsr_relaxed(qList, misTol_ori, Nneighbours, currentQ_vec)
     % Purpose:
     %   Computes a representative local mean orientation under relaxed
@@ -927,7 +943,9 @@ function [meanOri, clusterSizes] = calc_mean_ori_wsr_relaxed(qList, misTol_ori, 
     end
     meanOri = closestClusterMean;
 end
-
+%% =========================================================================
+%  HOLE FILLING - STRICT (BFS)
+%% =========================================================================
 function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingBFS(ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask)
     % Purpose:
     %   Fills unprotected notIndexed holes using a parallel BFS-style frontier expansion strategy.
@@ -1347,7 +1365,7 @@ function result = fillClusterBFS_patchWorker(pixList, patchPhase, patchOri, patc
                 continue;
             end
 
-            qMean = calc_mean_ori_hole( ...
+            qMean = calc_mean_ori_hole_strict( ...
                 nqList, winPhase, domPhase, misTol, innerK, validOuter, r, validFullVec, threshFrac);
 
             if isempty(qMean)
@@ -1381,7 +1399,7 @@ function result = fillClusterBFS_patchWorker(pixList, patchPhase, patchOri, patc
     result.localFilled = localFilled;
 end
 
-function [meanOri, clusterSizes] = calc_mean_ori_hole(nqList, winPhase, domPhase, misTol, innerK, outerMaskForRing, r, validFullVec, threshFrac)
+function [meanOri, clusterSizes] = calc_mean_ori_hole_strict(nqList, winPhase, domPhase, misTol, innerK, outerMaskForRing, r, validFullVec, threshFrac)
     % Purpose:
     %   Computes a local representative orientation for hole filling.
     %
@@ -1456,7 +1474,9 @@ function [meanOri, clusterSizes] = calc_mean_ori_hole(nqList, winPhase, domPhase
 
     meanOri = [];
 end
-
+%% =========================================================================
+%  HOLE FILLING - RELAXED (MPF)
+%% =========================================================================
 function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingMPF(ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask)
     % Purpose:
     %   Fills unprotected notIndexed holes using a serial MPF strategy with
@@ -1730,6 +1750,9 @@ function [ebsd_fill, phaseMapClean, oriQuatClean] = doHoleFillingMPF(ebsd, oriQu
 
     fprintf('✔ MPF complete (%.2f s total)\n', toc(t0));
 end
+
+
+
 
 function [meanOri, clusterSizes] = calc_mean_ori_hole_relaxed(qList, neighPhases, domPhase, misTol_ori, innerKernel, outerKernel, radius, maskValid, scaleLead, minLead)
     % Purpose:
