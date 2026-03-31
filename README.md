@@ -35,9 +35,10 @@
 | `radius_ori` | 2 | Kernel radius for Orientation WSR (pixels) |
 | `radius_fill_strict` | `[6 5 4 3 2 1]` | Descending radius sequence for BFS hole filling |
 | `radius_fill_relaxed` | `[7 6 5 4 3 2 1]` | Descending radius sequence for MPF hole filling |
-| `phaseFrac_strict` | radius-specific map | BFS support thresholds stored as `[required indexed support / neighbourhood size, required dominant-phase support / indexed support]` |
-| `phaseFrac_relaxed` | radius-specific map | MPF support thresholds stored as `[required indexed support / neighbourhood size, required dominant-phase support / indexed support]` |
+| `phaseFrac_strict` | radius-specific map | BFS support thresholds stored as `[Ni threshold, fracDom threshold]` |
+| `phaseFrac_relaxed` | radius-specific map | MPF support thresholds stored as `[Ni threshold, fracDom threshold]` |
 
+Note: `[Ni threshold, fracDom threshold]`: `[min indexed support / neighbourhood size, min dominant-phase support / min indexed support]` 
 ### Strict phase-fraction thresholds
 - params.phaseFrac_strict(6) = [62/136 45/62];
 - params.phaseFrac_strict(5) = [45/100 34/45];
