@@ -59,10 +59,10 @@ Note: `[Ni threshold, fracDom threshold]`: `[min indexed support / neighbourhood
  ## Requirements
  
  - **MATLAB** (Tested on 2024b)
- - **MTEX Toolbox** (Tested on 6.0.0) — https://mtex-toolbox.github.io/
- - **Parallel Computing Toolbox** — required for strict BFS hole filling and `parfor`-based orientation spike detection
- - **Image Processing Toolbox** — required for `fspecial`, `imdilate`, `bwdist`
- - **Statistics and Machine Learning Toolbox** — required for `linkage`, `cluster`
+ - **MTEX Toolbox** (Tested on 6.0.0) – https://mtex-toolbox.github.io/
+ - **Parallel Computing Toolbox** – required for strict BFS hole filling and `parfor`-based orientation spike detection
+ - **Image Processing Toolbox** – required for `fspecial`, `imdilate`, `bwdist`
+ - **Statistics and Machine Learning Toolbox** – required for `linkage`, `cluster`
  
  > **Note:** Proprietary MATLAB toolboxes require a valid licence to run.
 
@@ -138,9 +138,9 @@ My_EBSD_Project/
 
 MAPClean is the first step in a modular three-stage pipeline for EBSD analysis.
 
-1. **MAPClean** — Pixel-level noise removal and data restoration (this script).
-2. **GRaMC** — Grain Reconstruction and Multi-stage Cleaning: reconstructs grains, merges twins, removes inclusions.
-3. **GRaFT** — Grain-Resolved Fabric and Texture analysis: batch statistical analysis, texture quantification (J/M indices), shape analysis.
+1. **MAPClean** – Pixel-level noise removal and data restoration (this script).
+2. **GRaMC** – Grain Reconstruction and Multi-stage Cleaning: reconstructs grains, merges twins, removes inclusions.
+3. **GRaFT** – Grain-Resolved Fabric and Texture analysis: batch statistical analysis, texture quantification (J/M indices), shape analysis.
 
 ## Contributing
 
