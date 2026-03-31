@@ -39,12 +39,12 @@
 | `phaseFrac_relaxed` | radius-specific map | MPF support thresholds stored as `[required indexed support / neighbourhood size, required dominant-phase support / indexed support]` |
 
 ### Strict phase-fraction thresholds
-params.phaseFrac_strict(6) = [62/136 45/62];
-params.phaseFrac_strict(5) = [45/100 34/45];
-params.phaseFrac_strict(4) = [30/68 23/30];
-params.phaseFrac_strict(3) = [22/44 17/22];
-params.phaseFrac_strict(2) = [13/20 11/13];
-params.phaseFrac_strict(1) = [6/8 6/6];
+- params.phaseFrac_strict(6) = [62/136 45/62];
+- params.phaseFrac_strict(5) = [45/100 34/45];
+- params.phaseFrac_strict(4) = [30/68 23/30];
+- params.phaseFrac_strict(3) = [22/44 17/22];
+- params.phaseFrac_strict(2) = [13/20 11/13];
+- params.phaseFrac_strict(1) = [6/8 6/6];
 
 ### Relaxed phase-fraction thresholds
 params.phaseFrac_relaxed(7) = [72/184 56/72];
