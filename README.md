@@ -17,6 +17,43 @@
  - **Orientation Clustering:** Both BFS and MPF use hierarchical single-linkage clustering of neighbour quaternions to assign a mean orientation. MPF additionally uses a ring-based fallback when the full neighbourhood does not yield a sufficiently strong dominant orientation cluster.
  - **Visualisation:** Phase maps and Inverse Pole Figure (IPF) maps are exported automatically at every major pipeline stage.
  - **Checkpointing:** Each stage saves a `.mat` checkpoint. Subsequent runs load from the last saved checkpoint, allowing interrupted runs to resume without reprocessing.
+
+## Parameters
+
+| Parameter | Default | Description |
+|:---|:---|:---|
+| `exportRes` | 300 | Figure export resolution (dpi) |
+| `madThreshold` | 1.0 | MAD filter threshold (radians) |
+| `qcfrac` | 0.6 | notIndexed fraction threshold for Strict/Relaxed selection |
+| `radius_phase` | 3 | Kernel radius for Phase WSR (pixels) |
+| `min_dom_frac` | 0.5 | Minimum dominant phase fraction for Relaxed phase flipping |
+| `misTol_ori` | 5° | Misorientation tolerance for orientation clustering |
+| `thresholdFrac` | 0.75 | Minimum dominant cluster fraction for orientation assignment |
+| `minLead` | 2 | Minimum absolute lead count for Relaxed orientation clustering |
+| `scaleLead` | 0.1 | Scaled lead requirement as fraction of neighbourhood size (Relaxed) |
+| `minFrac_ori` | 0.25 | Minimum fraction of similar neighbours before a pixel is flagged as a wild spike |
+| `radius_ori` | 2 | Kernel radius for Orientation WSR (pixels) |
+| `radius_fill_strict` | `[6 5 4 3 2 1]` | Descending radius sequence for BFS hole filling |
+| `radius_fill_relaxed` | `[7 6 5 4 3 2 1]` | Descending radius sequence for MPF hole filling |
+| `phaseFrac_strict` | radius-specific map | BFS support thresholds stored as `[required indexed support / neighbourhood size, required dominant-phase support / indexed support]` |
+| `phaseFrac_relaxed` | radius-specific map | MPF support thresholds stored as `[required indexed support / neighbourhood size, required dominant-phase support / indexed support]` |
+
+### Strict phase-fraction thresholds
+params.phaseFrac_strict(6) = [62/136 45/62];
+params.phaseFrac_strict(5) = [45/100 34/45];
+params.phaseFrac_strict(4) = [30/68 23/30];
+params.phaseFrac_strict(3) = [22/44 17/22];
+params.phaseFrac_strict(2) = [13/20 11/13];
+params.phaseFrac_strict(1) = [6/8 6/6];
+
+### Relaxed phase-fraction thresholds
+params.phaseFrac_relaxed(7) = [72/184 56/72];
+params.phaseFrac_relaxed(6) = [50/136 36/50];
+params.phaseFrac_relaxed(5) = [34/100 26/34];
+params.phaseFrac_relaxed(4) = [24/68 18/24];
+params.phaseFrac_relaxed(3) = [16/44 12/16];
+params.phaseFrac_relaxed(2) = [10/20 8/10];
+params.phaseFrac_relaxed(1) = [4/8 4/4];
  
  ## Requirements
  
