@@ -110,8 +110,7 @@ addpath(genpath('path_to_MAPClean'));
  - Parallelism is limited to screening and orientation detection stages.
  
  Orientation WSR:
- - Wild spike detection is parallelised using `parfor`.
- - Correction is applied sequentially.
+ - Wild-spike detection is parallelised using `parfor`.
  
  ## Outputs
  
