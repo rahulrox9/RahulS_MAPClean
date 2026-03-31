@@ -27,6 +27,19 @@
  - **Statistics and Machine Learning Toolbox** — required for `linkage`, `cluster`
  
  > **Note:** Proprietary MATLAB toolboxes require a valid licence to run.
+
+## Installation & Setup
+
+Since MAPClean is part of a three-stage ecosystem, we recommend setting up a single project workspace.
+
+1. Create a new folder (e.g., `My_EBSD_Project/`).
+2. Place `MAPClean.m` in that folder.
+3. (Recommended) Place **GRaMC** and **GRaFT** in the same folder.
+4. Add the folder to your MATLAB path:
+```matlab
+addpath(genpath('path_to_MAPClean'));
+```
+5. Ensure MTEX is installed and initialised (`startup_mtex`).
  
  ## Usage
  
@@ -68,6 +81,38 @@
  - Phase maps and IPF maps (`.png`)
  - Log file
  - Optional cleaned `.ctf`
+
+## Directory Structure
+
+```text
+My_EBSD_Project/
+├── DataFiles/          # [Input] Raw .ctf files
+├── checkpoints/        # [Auto] Stage checkpoints (.mat)
+├── exports/
+│   ├── MAPClean/       # [Auto] MAPClean plots and logs
+│   ├── GrainClean/     # Stage 2 outputs (GRaMC)
+│   └── Textures/       # Stage 3 outputs (GRaFT)
+├── MAPClean.m          # (Stage 1) This script
+├── GRaMC.m             # (Stage 2) Grain Reconstruction
+└── GRaFT.m             # (Stage 3) Texture Analysis
+```
+
+## The MAPClean Ecosystem
+
+MAPClean is the first step in a modular three-stage pipeline for EBSD analysis.
+
+1. **MAPClean** — Pixel-level noise removal and data restoration (this script).
+2. **GRaMC** — Grain Reconstruction and Multi-stage Cleaning: reconstructs grains, merges twins, removes inclusions.
+3. **GRaFT** — Grain-Resolved Fabric and Texture analysis: batch statistical analysis, texture quantification (J/M indices), shape analysis.
+
+## Contributing
+
+1. Fork the repository.
+2. Create a new branch for your feature.
+3. Submit a pull request with a detailed description of changes.
  
  ## Licence
- GPL v3
+
+This code is licensed under **GPL version 3** (see [LICENSE](LICENSE)).
+
+> **Note:** This project depends on MTEX (GPLv3). Users must have valid licences for any proprietary MATLAB toolboxes used.
