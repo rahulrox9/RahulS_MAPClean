@@ -47,13 +47,13 @@
 - params.phaseFrac_strict(1) = [6/8 6/6];
 
 ### Relaxed phase-fraction thresholds
-params.phaseFrac_relaxed(7) = [72/184 56/72];
-params.phaseFrac_relaxed(6) = [50/136 36/50];
-params.phaseFrac_relaxed(5) = [34/100 26/34];
-params.phaseFrac_relaxed(4) = [24/68 18/24];
-params.phaseFrac_relaxed(3) = [16/44 12/16];
-params.phaseFrac_relaxed(2) = [10/20 8/10];
-params.phaseFrac_relaxed(1) = [4/8 4/4];
+- params.phaseFrac_relaxed(7) = [72/184 56/72];
+- params.phaseFrac_relaxed(6) = [50/136 36/50];
+- params.phaseFrac_relaxed(5) = [34/100 26/34];
+- params.phaseFrac_relaxed(4) = [24/68 18/24];
+- params.phaseFrac_relaxed(3) = [16/44 12/16];
+- params.phaseFrac_relaxed(2) = [10/20 8/10];
+- params.phaseFrac_relaxed(1) = [4/8 4/4];
  
  ## Requirements
  
