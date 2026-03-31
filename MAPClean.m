@@ -79,7 +79,7 @@ dataDir = fullfile(pwd,'DataFiles');
 sampleNames = {'sample1','sample2'}; # samplename must match the "filename.ctf" without the ".ctf"
 fileList = cellfun(@(s) dir(fullfile(dataDir,[s '.ctf'])), sampleNames, 'UniformOutput', false);
 fileList = vertcat(fileList{:});
-checkpointDir = fullfile(pwd,'MAPClean','checkpoints');
+checkpointDir = fullfile(pwd,'checkpoints');
 exportDir = fullfile(pwd,'MAPCLean');
 if ~exist(checkpointDir,'dir'), mkdir(checkpointDir); end
 if ~exist(exportDir,'dir'), mkdir(exportDir); end
