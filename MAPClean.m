@@ -669,41 +669,65 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
     global params
     t0 = tic;
     fprintf('\nOrientation WSR:\n');
+
     phases = ebsd.mineralList;
     notIndexedId = find(strcmpi(phases,'notIndexed'));
     MinPhaseNames = phases(MinPhaseIds);
-    kernel_ori = double(fspecial('disk', params.radius_ori)) > 0;
-    kernel_ori(params.radius_ori+1, params.radius_ori+1) = 0;
+
+    r = params.radius_ori;
+    kernel_ori = double(fspecial('disk', r)) > 0;
+    kernel_ori(r+1, r+1) = 0;
 
     for p = 1:numel(MinPhaseIds)
         pid = MinPhaseIds(p);
         pname = MinPhaseNames{p};
+
         mask = (phaseMapClean == pid) & sampleMask;
         [rowsAll, colsAll] = find(mask);
         numPx = numel(rowsAll);
-        paddedOri = padarray(oriQuatClean, [params.radius_ori params.radius_ori], 0, 'both');
-        paddedPhase = padarray(phaseMapClean, [params.radius_ori params.radius_ori], 0, 'both');
+
+        paddedOri = padarray(oriQuatClean, [r r], 0, 'both');
+        paddedPhase = padarray(phaseMapClean, [r r], 0, 'both');
 
         fprintf('  Phase %s: %d pixels — detecting wild spikes (parfor)...\n', pname, numPx);
         tSpike = tic;
+
+        % --------------------------------------------------------------
+        % Precompute neighbour quaternion lists outside parfor
+        % --------------------------------------------------------------
+        neighQuatLists = cell(numPx,1);
+        currentQList = zeros(numPx,4);
+
+        for k = 1:numPx
+            i = rowsAll(k);
+            j = colsAll(k);
+            iP = i + r;
+            jP = j + r;
+
+            oriWin = paddedOri(iP-r:iP+r, jP-r:jP+r, :);
+            phaseWin = paddedPhase(iP-r:iP+r, jP-r:jP+r);
+
+            nMask = (phaseWin == pid) & kernel_ori;
+            oriList = reshape(oriWin, [], 4);
+            neighQuatLists{k} = oriList(nMask(:), :);
+
+            currentQList(k,:) = squeeze(oriQuatClean(i,j,:))';
+        end
+
         wildSpikeFlags = false(numPx, 1);
         misTol_local = params.misTol_ori;
         minFrac_ori_local = params.minFrac_ori;
 
         parfor k = 1:numPx
-            i = rowsAll(k);
-            j = colsAll(k);
-            iP = i + params.radius_ori;
-            jP = j + params.radius_ori;
-            oriWin = paddedOri(iP-params.radius_ori:iP+params.radius_ori, jP-params.radius_ori:jP+params.radius_ori, :);
-            phaseWin = paddedPhase(iP-params.radius_ori:iP+params.radius_ori, jP-params.radius_ori:jP+params.radius_ori);
-            nMask = (phaseWin == pid) & kernel_ori;
-            oriList = reshape(oriWin, [], 4);
-            nqList = oriList(nMask(:), :);
-            if isempty(nqList), continue; end
-            cQ = squeeze(oriQuatClean(i,j,:))';
+            nqList = neighQuatLists{k};
+            if isempty(nqList)
+                continue;
+            end
+
+            cQ = currentQList(k,:);
             dots = abs(nqList * cQ');
             dots(dots > 1) = 1;
+
             fracSim = sum(2*acos(dots) < misTol_local) / numel(dots);
             if fracSim < minFrac_ori_local
                 wildSpikeFlags(k) = true;
@@ -722,14 +746,17 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
             k = spikeIdx(ks);
             i = rowsAll(k);
             j = colsAll(k);
-            iP = i + params.radius_ori;
-            jP = j + params.radius_ori;
-            oriWin = paddedOri(iP-params.radius_ori:iP+params.radius_ori, jP-params.radius_ori:jP+params.radius_ori, :);
-            phaseWin = paddedPhase(iP-params.radius_ori:iP+params.radius_ori, jP-params.radius_ori:jP+params.radius_ori);
+            iP = i + r;
+            jP = j + r;
+
+            oriWin = paddedOri(iP-r:iP+r, jP-r:jP+r, :);
+            phaseWin = paddedPhase(iP-r:iP+r, jP-r:jP+r);
+
             nMask = (phaseWin == pid) & kernel_ori;
             oriList = reshape(oriWin, [], 4);
             nqList = oriList(nMask(:), :);
             Nn = size(nqList, 1);
+
             cQ_vec = squeeze(oriQuatClean(i,j,:))';
             currentQ = quaternion(cQ_vec(1), cQ_vec(2), cQ_vec(3), cQ_vec(4));
 
@@ -740,14 +767,16 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
                 numRemoved = numRemoved + 1;
                 continue;
             end
+
             if Nn == 1
                 continue;
             end
+
             if Nn == 2
                 dots = abs(nqList * cQ_vec');
                 dots(dots > 1) = 1;
                 if all(2*acos(dots) < params.misTol_ori)
-                    qM = mean(quaternion(nqList(:,1),nqList(:,2),nqList(:,3),nqList(:,4)),'meanOrientation');
+                    qM = mean(quaternion(nqList(:,1), nqList(:,2), nqList(:,3), nqList(:,4)), 'meanOrientation');
                     oriQuatClean(i,j,:) = [qM.a qM.b qM.c qM.d];
                     paddedOri(iP,jP,:) = [qM.a qM.b qM.c qM.d];
                     numReoriented = numReoriented + 1;
@@ -757,8 +786,9 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
 
             dots = abs(nqList * cQ_vec');
             dots(dots > 1) = 1;
+
             if all(2*acos(dots) < params.misTol_ori)
-                qM = mean(quaternion(nqList.'),'meanOrientation');
+                qM = mean(quaternion(nqList.'), 'meanOrientation');
             else
                 qM = calc_mean_ori_wsr_strict(nqList, params.misTol_ori, Nn, cQ_vec);
             end
@@ -770,22 +800,21 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
                 axisTol = 5 * degree;
                 misAng = angle(misOri);
                 isTwin = false;
-            
+
                 if abs(misAng - 180*degree) <= twinAngleTol
                     twinAxis = axis(misOri);
-                    
-                    % Exhaustive list of 180-degree rotation axes for Anorthite
+
                     candidateDirs = [ ...
-                        vector3d(Miller(0,1,0,cs)), ...          % Albite (Normal to 010) - CRITICAL ADDITION
-                        vector3d(Miller(0,1,0,cs,'uvw')), ...    % Pericline (Direct [010])
-                        vector3d(Miller(0,0,1,cs,'uvw')), ...    % Carlsbad (Direct [001])
-                        vector3d(Miller(0,0,1,cs)), ...          % Manebach (Normal to 001)
-                        vector3d(Miller(0,2,1,cs)), ...          % Baveno Right (Normal to 021)
-                        vector3d(Miller(0,-2,1,cs)), ...         % Baveno Left (Normal to 0-21)
-                        vector3d(Miller(1,0,0,cs,'uvw')), ...    % Ala A (Direct [100])
-                        vector3d(Miller(1,0,0,cs)) ...           % Ala B (Normal to 100)
+                        vector3d(Miller(0,1,0,cs)), ...
+                        vector3d(Miller(0,1,0,cs,'uvw')), ...
+                        vector3d(Miller(0,0,1,cs,'uvw')), ...
+                        vector3d(Miller(0,0,1,cs)), ...
+                        vector3d(Miller(0,2,1,cs)), ...
+                        vector3d(Miller(0,-2,1,cs)), ...
+                        vector3d(Miller(1,0,0,cs,'uvw')), ...
+                        vector3d(Miller(1,0,0,cs)) ...
                     ];
-            
+
                     for tt = 1:numel(candidateDirs)
                         d = candidateDirs(tt);
                         if angle(twinAxis, d) < axisTol || angle(twinAxis, -d) < axisTol
@@ -794,7 +823,7 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
                         end
                     end
                 end
-            
+
                 if isTwin
                     numSkippedTwin = numSkippedTwin + 1;
                     continue;
@@ -808,27 +837,35 @@ function [ebsd_ori, oriQuatClean, phaseMapClean] = doOrientationWSR(ebsd, oriQua
 
         fprintf('  %s OriWSR: Removed=%d  Reoriented=%d  TwinsSkipped=%d\n', ...
             pname, numRemoved, numReoriented, numSkippedTwin);
+
+        clear neighQuatLists currentQList paddedOri paddedPhase
     end
 
     ebsd_ori = ebsd;
     ebsd_ori.phaseId(:) = phaseMapClean(:);
+
     qFull = quaternion(oriQuatClean(:,:,1), oriQuatClean(:,:,2), oriQuatClean(:,:,3), oriQuatClean(:,:,4));
     for p = 1:numel(MinPhaseIds)
         pid = MinPhaseIds(p);
         pname = MinPhaseNames{p};
         mask = (phaseMapClean == pid) & sampleMask;
-        if ~any(mask,'all'), continue; end
+        if ~any(mask,'all')
+            continue;
+        end
         ebsd_ori(mask).orientations = orientation(qFull(mask), ebsd_ori(pname).CS);
     end
 
     fprintf('✔ Orientation WSR core done (%.2f s)\n', toc(t0));
+
     tStats = tic;
     showPhaseStats(ebsd_ori, phases, 'After Orientation WSR');
     fprintf('✔ Orientation WSR stats done (%.2f s)\n', toc(tStats));
+
     tPlot = tic;
     plotPhaseMap(ebsd_ori, sampleName, exportPath, 'OriWSR', params.exportRes);
     plotIPFMapPhases(ebsd_ori, sampleName, exportPath, 'OriWSR', params.exportRes);
     fprintf('✔ Orientation WSR figure export done (%.2f s)\n', toc(tPlot));
+
     fprintf('✔ Orientation WSR total done (%.2f s)\n', toc(t0));
 end
 %% =========================================================================
