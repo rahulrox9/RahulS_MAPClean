@@ -1,6 +1,7 @@
 %% MAPClean – Microstructurally Adaptive Pixel-Level Cleaning
-% MAPClean is a phase- and orientation-aware EBSD cleaning workflow for
-% sparsely indexed and noisy maps. The pipeline consists of:
+% MAPClean is an automated and adaptive phase- and orientation-aware
+%  EBSD cleaning workflow for sparsely indexed or noisy maps. 
+% The pipeline consists of:
 %   1. MAD-based removal of unreliable pixels
 %   2. Sample mask generation
 %   3. Phase-wise statistical reassignment (WSR)
@@ -15,6 +16,9 @@
 %   - phase map (phaseMapClean)
 %   - quaternion orientation map (oriQuatClean)
 %   - checkpointed intermediate results
+%
+% Author: Rahul Subbaraman (University of Manchester)
+% Date: v.1.0 December 2025, v.2.0 March 2026
 
 clc; clear; close all;
 addpath(genpath(pwd));
