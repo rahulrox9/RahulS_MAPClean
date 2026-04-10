@@ -81,9 +81,7 @@ params.phaseFrac_relaxed(1) = [4/8 4/4];
 
 %% Directories
 dataDir = fullfile(pwd,'DataFiles');
-%sampleNames = {'sample1','sample2'}; # samplename must match the "filename.ctf" without the ".ctf"
-%sampleNames = {'01a6','4N3C','024','01a2'};
-sampleNames = {'01a2'};
+sampleNames = {'sample1','sample2'}; # samplename must match the "filename.ctf" without the ".ctf"
 fileList = cellfun(@(s) dir(fullfile(dataDir,[s '.ctf'])), sampleNames, 'UniformOutput', false);
 fileList = vertcat(fileList{:});
 checkpointDir = fullfile(pwd,'checkpoints');
