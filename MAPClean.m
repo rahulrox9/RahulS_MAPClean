@@ -1,12 +1,12 @@
 %% MAPClean – Microstructurally Adaptive Pixel-Level Cleaning
-% MAPClean is an automated and adaptive phase- and orientation-aware
-%  EBSD cleaning workflow for sparsely indexed or noisy maps. 
-% The pipeline consists of:
+% MAPClean is a phase- and orientation-aware EBSD cleaning workflow for
+% sparsely indexed and noisy maps. The pipeline consists of:
 %   1. MAD-based removal of unreliable pixels
 %   2. Sample mask generation
 %   3. Phase-wise statistical reassignment (WSR)
 %   4. Orientation-wise spike removal / reassignment (WSR)
 %   5. Hole filling using either BFS (strict mode) or MPF (relaxed mode)
+%   6. Protected hole filling for conservative recovery of excluded pixels
 %
 % The workflow automatically switches between strict and relaxed filling
 % regimes depending on the notIndexed fraction within the sample mask.
@@ -16,9 +16,6 @@
 %   - phase map (phaseMapClean)
 %   - quaternion orientation map (oriQuatClean)
 %   - checkpointed intermediate results
-%
-% Author: Rahul Subbaraman (University of Manchester)
-% Date: v.1.0 December 2025, v.2.0 March 2026
 
 clc; clear; close all;
 addpath(genpath(pwd));
@@ -26,13 +23,13 @@ import mtex.*;
 setMTEXpref('generatingHelpMode','silent');
 warning('off','all');
 
-c = parcluster('local');
-maxWorkers = c.NumWorkers;
+%% Parallel Environment Setup
+c = parcluster('local'); % Initialises the local parallel pool for MAPClean execution.
+maxWorkers = c.NumWorkers; % Detects the maximum available workers on the local cluster
 saveProfile(c);
-delete(c.Jobs);
+delete(c.Jobs); % Clears any existing jobs or active pools
 delete(gcp('nocreate'));
-parpool('local', maxWorkers);
-
+parpool('local', maxWorkers); % Starts a fresh parallel pool using all available workers
 
 %% User Configuration
 %% --- Stage Control ---
@@ -42,49 +39,55 @@ runCrop     = true;
 runPhaseWSR = true;
 runOriWSR   = true;
 runHoleFill = true;
+runProtFill = true;
 runSaveFile = true;
 
 %% --- Parameters ---
 global params
-params.exportRes      = 300;
-params.madThreshold   = 1.0;
-params.qcfrac         = 0.6;
-params.radius_phase   = 3;
-params.min_dom_frac   = 0.5;
-params.misTol_ori     = 5*degree;
-params.thresholdFrac  = 0.75;
-params.minFrac_ori    = 0.25;
-params.radius_ori     = 2;
-params.minLead        = 2;
-params.scaleLead      = 0.1;
+params.exportRes      = 300;        % Figure export resolution (dpi)
+params.madThreshold   = 1.0;        % MAD filter threshold (radians)
+params.qcfrac         = 0.6;        % notIndexed fraction threshold for Strict/Relaxed selection
+params.radius_phase   = 3;          % Kernel radius for Phase WSR (pixels)
+params.min_dom_frac   = 0.5;        % Minimum dominant phase fraction (Relaxed phase WSR)
+params.misTol_ori     = 5*degree;   % Misorientation tolerance for orientation clustering
+params.thresholdFrac  = 0.75;       % Minimum dominant cluster fraction (Strict orientation logic)
+params.minFrac_ori    = 0.25;       % Minimum similar-neighbour fraction to avoid spike flagging
+params.radius_ori     = 2;          % Kernel radius for Orientation WSR (pixels)
+params.minLead        = 2;          % Minimum absolute lead for Relaxed orientation clustering
+params.scaleLead      = 0.1;        % Scaled lead requirement (fraction of neighbourhood size)
+params.coverageFrac   = 0.60;       % Minimum neighbourhood coverage for protected filling
+params.threshFracRing = 0.75;       % Ring-based orientation coherence threshold (protected filling)
+params.domFracProt    = 0.90;       % Minimum dominant phase fraction (protected filling)
 
 params.radius_fill_strict   = [6 5 4 3 2 1];
 params.phaseFrac_strict     = containers.Map('KeyType','double','ValueType','any');
 % Format: [Target_Count / N_disk, Threshold / Target_Count]
-params.phaseFrac_strict(6) = [62/136 45/62];
-params.phaseFrac_strict(5) = [45/100 34/45];
-params.phaseFrac_strict(4) = [30/68 23/30];
-params.phaseFrac_strict(3) = [22/44 17/22];
-params.phaseFrac_strict(2) = [13/20 11/13];
-params.phaseFrac_strict(1) = [6/8 6/6];
+params.phaseFrac_strict(6) = [56/136 40/56];
+params.phaseFrac_strict(5) = [40/100 30/40];
+params.phaseFrac_strict(4) = [26/68 20/26];
+params.phaseFrac_strict(3) = [18/44 14/18];
+params.phaseFrac_strict(2) = [11/20 9/11];
+params.phaseFrac_strict(1) = [5/8 5/5];
 
 params.radius_fill_relaxed  = [7 6 5 4 3 2 1];
 params.phaseFrac_relaxed    = containers.Map('KeyType','double','ValueType','any');
 params.phaseFrac_relaxed(7) = [72/184 56/72];
 params.phaseFrac_relaxed(6) = [50/136 36/50];
 params.phaseFrac_relaxed(5) = [34/100 26/34];
-params.phaseFrac_relaxed(4) = [24/68 18/24];
-params.phaseFrac_relaxed(3) = [16/44 12/16];
-params.phaseFrac_relaxed(2) = [10/20 8/10];
+params.phaseFrac_relaxed(4) = [22/68 16/22];
+params.phaseFrac_relaxed(3) = [14/44 10/14];
+params.phaseFrac_relaxed(2) = [8/20 6/8];
 params.phaseFrac_relaxed(1) = [4/8 4/4];
 
 %% Directories
 dataDir = fullfile(pwd,'DataFiles');
-sampleNames = {'sample1','sample2'}; # samplename must match the "filename.ctf" without the ".ctf"
+%sampleNames = {'sample1','sample2'}; # samplename must match the "filename.ctf" without the ".ctf"
+%sampleNames = {'01a6','4N3C','024','01a2'};
+sampleNames = {'01a2'};
 fileList = cellfun(@(s) dir(fullfile(dataDir,[s '.ctf'])), sampleNames, 'UniformOutput', false);
 fileList = vertcat(fileList{:});
 checkpointDir = fullfile(pwd,'checkpoints');
-exportDir = fullfile(pwd,'MAPCLean');
+exportDir = fullfile(pwd,'MAPClean');
 if ~exist(checkpointDir,'dir'), mkdir(checkpointDir); end
 if ~exist(exportDir,'dir'), mkdir(exportDir); end
 
@@ -131,6 +134,7 @@ for fi = 1:numel(fileList)
     phaseFile = fullfile(checkpointDir, sprintf('%s_ebsd_phase.mat', sampleName));
     oriFile   = fullfile(checkpointDir, sprintf('%s_ebsd_ori.mat', sampleName));
     fillFile  = fullfile(checkpointDir, sprintf('%s_ebsd_fill.mat', sampleName));
+    profillFile  = fullfile(checkpointDir, sprintf('%s_ebsd_profill.mat', sampleName));
     paramFile = fullfile(checkpointDir, sprintf('%s_params.mat', sampleName));
     
     ebsd = ebsd_raw;
@@ -272,6 +276,37 @@ for fi = 1:numel(fileList)
     else
         fprintf('⚠ Hole fill skipped and no checkpoint exists (%.2f s)\n', toc(tFill));
     end
+    
+    % Protected Filling
+    tProtFill = tic;
+    fprintf('--- Filling Protected Holes ---\n');
+    if runProtFill
+        [ebsd_profill, phaseMapClean, oriQuatClean] = doProtectedFilling( ...
+            ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask);
+        ebsd = EBSD(ebsd_profill, 'convert');
+        fprintf('✔ Protected hole filling core done (%.2f s)\n', toc(tProtFill));
+
+        tProtStats = tic;
+        showPhaseStats(ebsd, ebsd.mineralList, 'Phase distribution after protected hole fill');
+        fprintf('✔ Protected hole-fill stats done (%.2f s)\n', toc(tProtStats));
+
+        tProtPlot = tic;
+        plotPhaseMap(ebsd, sampleName, exportPath, 'profill', params.exportRes);
+        plotIPFMapPhases(ebsd, sampleName, exportPath, 'profill', params.exportRes);
+        fprintf('✔ Protected hole-fill figure export done (%.2f s)\n', toc(tProtPlot));
+
+        save(profillFile,'ebsd_profill','phaseMapClean','oriQuatClean','protectedMask');
+        fprintf('✔ Protected hole-fill checkpoint saved (%.2f s)\n', toc(tProtFill));
+
+    elseif exist(profillFile,'file')
+        load(profillFile,'ebsd_profill','phaseMapClean','oriQuatClean','protectedMask');
+        ebsd = ebsd_profill;
+        fprintf('✔ Protected hole-fill checkpoint loaded (%.2f s)\n', toc(tProtFill));
+
+    else
+        fprintf('⚠ Protected hole fill skipped and no checkpoint exists (%.2f s)\n', toc(tProtFill));
+    end
+
     % SAVE CLEAN FILE
     if runSaveFile
         outFile = fullfile(dataDir,[sampleName '_clean.ctf']);
@@ -1906,6 +1941,248 @@ function showPhaseStats(ebsdObj, phases, msg)
         fprintf('%-12s: %6d points (%.2f%%)\n', phases{i}, n, 100*n/total);
     end
     fprintf('--------------------------------\n');
+end
+%% =========================================================================
+%   Protected Filling
+% =========================================================================
+function [ebsd_pro, phaseMapClean, oriQuatClean] = doProtectedFilling(ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask)
+% Purpose:
+% Fills pixels previously flagged as protected (high MAD/WSR)
+% using conservative interior-style rules.
+%
+% Inputs:
+%   ebsd, oriQuatClean, phaseMapClean, protectedMask, sampleMask.
+%
+% Outputs:
+%   ebsd_pro       - Updated EBSD object.
+%   phaseMapClean  - Updated Phase Map.
+%   oriQuatClean   - Updated Orientation Quaternions.
+
+    global params
+
+    radii = params.radius_fill;
+    coverageFrac = params.coverageFrac;
+    threshFracRing = params.threshFracRing;
+    misTol_ori = params.misTol_ori;
+    domFracProt = params.domFracProt;   % NEW: strong dominant-phase requirement
+
+    phases = ebsd.mineralList;
+    notIndexedId = find(strcmpi(phases,'notIndexed'));
+    MinPhaseIds = setdiff(1:numel(phases), notIndexedId);
+    MinPhaseNames = phases(MinPhaseIds);
+
+    [Nrow, Ncol] = size(phaseMapClean);
+    ebsdPhaseIdGrid = reshape(ebsd.phaseId, Nrow, Ncol);
+
+    initialProtectedHoleMask = (ebsdPhaseIdGrid == notIndexedId) & protectedMask & sampleMask;
+    holeMask = initialProtectedHoleMask;
+
+    fprintf('\n--- Starting Protected Hole Filling ---\n');
+    fillCountTotal = 0;
+
+    % CHANGED: small -> large radius
+    for k = 1:numel(radii)
+        radius = radii(k);
+        fprintf('Processing Radius = %d ...\n', radius);
+
+        kernelFull = double(fspecial('disk', radius)) > 0;
+        N = size(kernelFull);
+        innerKernel = false(N);
+        innerKernel(radius+1, radius+1) = true;
+        outerKernel = kernelFull & ~innerKernel;
+
+        fillCountRadius = 0;
+        passes = 0;
+        baseHoleMask = holeMask;
+        filledLastPass = false(Nrow, Ncol);
+
+        while true
+            passes = passes + 1;
+
+            paddedPhase = padarray(phaseMapClean, [radius radius], 0, 'both');
+            paddedOri   = padarray(oriQuatClean, [radius radius], 0, 'both');
+
+            if passes == 1
+                currentHoleMask = baseHoleMask & (phaseMapClean == notIndexedId);
+            else
+                dilatedFilled = imdilate(filledLastPass, outerKernel);
+                currentHoleMask = baseHoleMask & dilatedFilled & (phaseMapClean == notIndexedId);
+            end
+
+            [holeRows, holeCols] = find(currentHoleMask);
+            numHoles = numel(holeRows);
+
+            if numHoles == 0
+                fprintf('⚠ No remaining protected holes to fill at this radius.\n');
+                break;
+            end
+
+            fillCountPass = 0;
+            fprintf('Total candidate protected holes: %d\n', numHoles);
+
+            for h = 1:numHoles
+                i = holeRows(h);
+                j = holeCols(h);
+
+                if phaseMapClean(i,j) ~= notIndexedId
+                    continue;
+                end
+
+                iP = i + radius;
+                jP = j + radius;
+
+                winPhase = paddedPhase(iP-radius:iP+radius, jP-radius:jP+radius);
+                winOri   = paddedOri(iP-radius:iP+radius, jP-radius:jP+radius, :);
+
+                maskValid = (winPhase > 0 & winPhase ~= notIndexedId) & kernelFull;
+                neighPhases = winPhase(maskValid);
+
+                if isempty(neighPhases)
+                    continue;
+                end
+
+                % --- Check 1: Coverage ---
+                coverage = numel(neighPhases) / sum(kernelFull(:));
+                if coverage < coverageFrac
+                    continue;
+                end
+
+                % --- Check 2: Strong dominant phase (replaces perfect uniformity) ---
+                [uniquePh, ~, ic] = unique(neighPhases);
+                counts = accumarray(ic, 1);
+                [maxCount, idxMax] = max(counts);
+                domPhase = uniquePh(idxMax);
+                fracDom = maxCount / numel(neighPhases);
+
+                if fracDom < domFracProt
+                    continue;
+                end
+
+                % Build quaternion list for valid neighbours
+                qList = reshape(winOri, [], 4);
+                qList = qList(maskValid(:), :);
+
+                % --- Check 3: Orientation (Ring-based) ---
+                meanOri = calc_mean_ori_ring( ...
+                    qList, neighPhases, domPhase, misTol_ori, ...
+                    innerKernel, outerKernel, radius, maskValid, threshFracRing);
+
+                if isempty(meanOri)
+                    continue;
+                end
+
+                % ===== SUCCESSFUL FILL =====
+                phaseMapClean(i,j) = domPhase;
+                oriQuatClean(i,j,:) = [meanOri.a meanOri.b meanOri.c meanOri.d];
+
+                fillCountPass   = fillCountPass + 1;
+                fillCountRadius = fillCountRadius + 1;
+                fillCountTotal  = fillCountTotal + 1;
+
+                paddedPhase(iP,jP) = domPhase;
+                paddedOri(iP,jP,:) = [meanOri.a meanOri.b meanOri.c meanOri.d];
+
+                filledLastPass(i,j) = true;
+            end
+
+            fprintf('  Pass %d complete: filled %d holes.\n', passes, fillCountPass);
+
+            if fillCountPass == 0
+                break;
+            end
+        end
+
+        fprintf('  ✔ Total holes filled by radius %d: %d\n', radius, fillCountRadius);
+    end
+
+    fprintf('\n--- Protected Hole Filling Complete. Total filled: %d ---\n', fillCountTotal);
+
+    % --- Rebuild EBSD object with filled data ---
+    ebsd_pro = ebsd;
+    ebsd_pro.phaseId(:) = phaseMapClean(:);
+
+    qFull_fill = quaternion( ...
+        oriQuatClean(:,:,1), ...
+        oriQuatClean(:,:,2), ...
+        oriQuatClean(:,:,3), ...
+        oriQuatClean(:,:,4));
+
+    for p = 1:numel(MinPhaseIds)
+        pid = MinPhaseIds(p);
+        pname = MinPhaseNames{p};
+        mask = (ebsd_pro.phaseId == pid) & initialProtectedHoleMask(:);
+
+        if ~any(mask)
+            continue;
+        end
+        ebsd_pro(mask).orientations = orientation(qFull_fill(mask), ebsd(pname).CS);
+    end
+end
+
+function meanOri = calc_mean_ori_ring(qList, neighPhases, domPhase, misTol_ori, innerKernel, outerKernel, radius, maskValid, thresholdFrac)
+% CALC_MEAN_ORI_RING Calculates mean orientation based on coherence in the
+% nearest successful orientation ring.
+
+    meanOri = [];
+
+    distMap = bwdist(innerKernel);
+    distMap = round(distMap);
+    distMap(~outerKernel) = 0;
+
+    bestRing = [];
+    bestIdx = [];
+    bestCluster = [];
+
+    % CHANGED: keep searching rings instead of breaking on first failure
+    for ringWidth = 1:radius
+        ringMask = (distMap == ringWidth);
+        if ~any(ringMask(:))
+            continue;
+        end
+
+        validLinearIdx = find(maskValid);
+        ringLinearIdx  = find(ringMask(:));
+        [~, commonIdx, ~] = intersect(validLinearIdx, ringLinearIdx);
+
+        if isempty(commonIdx)
+            continue;
+        end
+
+        qRing = qList(commonIdx, :);
+        neighPhasesRing = neighPhases(commonIdx);
+        qRingDom = qRing(neighPhasesRing == domPhase, :);
+        Nring = size(qRingDom, 1);
+
+        if Nring < 2
+            continue;
+        end
+
+        D_ring = 2 * acos(min(abs(qRingDom * qRingDom.'), 1));
+        D_ring(1:size(D_ring,1)+1:end) = 0;
+        Dc_ring = squareform(D_ring);
+        Z_ring = linkage(Dc_ring, 'single');
+        idx_ring = cluster(Z_ring, 'cutoff', misTol_ori, 'criterion', 'distance');
+
+        counts_ring = accumarray(idx_ring, 1);
+        [maxCountRing, domClusterRing] = max(counts_ring);
+        domFracRing = maxCountRing / Nring;
+
+        if domFracRing >= thresholdFrac
+            bestRing = qRingDom;
+            bestIdx = idx_ring;
+            bestCluster = domClusterRing;
+            break; % accept first successful inner ring
+        end
+    end
+
+    if isempty(bestRing)
+        return;
+    end
+
+    membersRing = (bestIdx == bestCluster);
+    qClusterRing = bestRing(membersRing, :);
+    qAllDom = quaternion(qClusterRing.');
+    meanOri = mean(qAllDom, 'meanOrientation');
 end
 
 function plotPhaseMap(ebsdObj, sampleName, exportPath, suffix, res)
