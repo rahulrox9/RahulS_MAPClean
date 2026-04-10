@@ -2,7 +2,7 @@
  
  **A modular MATLAB pipeline for automated cleaning of Electron Backscatter Diffraction datasets**
  
- MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction (EBSD) datasets. It employs an intelligent **Strict vs. Relaxed** protocol selection based on data quality to apply the most appropriate cleaning strategy. The pipeline features **Mean Angular Deviation (MAD) filtering**, **sample-mask generation** for physically grounded restriction of the mapped specimen region, **phase and orientation wild spike removal (WSR)**, and adaptive **hole filling** using parallelised Breadth-First Search (BFS, Strict mode) or Multi-Pass Filling (MPF, Relaxed mode). Parallel execution via MATLAB's Parallel Computing Toolbox is used in the strict BFS hole-filling stage and in the orientation wild-spike detection stage.
+MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, for automated cleaning of Electron Backscatter Diffraction (EBSD) datasets. The workflow operates at the pixel level, combining phase-aware and orientation-aware logic to remove noise, correct misindexed pixels, and reconstruct missing data. It employs an intelligent **Strict vs. Relaxed** protocol selection based on data quality to apply the most appropriate cleaning strategy. The pipeline features **Mean Angular Deviation (MAD) filtering**, **sample-mask generation** for physically grounded restriction of the mapped specimen region, **phase and orientation wild spike removal (WSR)**, adaptive **hole filling** using parallelised Breadth-First Search (BFS, Strict mode) or Multi-Pass Filling (MPF, Relaxed mode), and a **protected hole filling** for conservative recovery of uncertain grain interior regions. Parallel execution via MATLAB's Parallel Computing Toolbox is used in the strict BFS hole-filling stage and in the orientation wild-spike detection stage.
  
  ## Key Features
  
@@ -14,6 +14,7 @@
  - **Orientation WSR:** Detects and corrects orientation wild spikes using local misorientation clustering. Includes twin-boundary protection for Anorthite.
  - **BFS Hole Filling (Strict):** Parallelised cluster-based filling. Disconnected hole clusters are identified, screened for sufficient neighbourhood support, and then filled in parallel. Each worker updates its local patch in sequence so that newly filled pixels can support later fills within the same cluster.
  - **MPF Hole Filling (Relaxed):** Multi-pass iterative filling for sparse maps with large connected hole regions. Vectorised Ni and fracDom pre-filters identify valid candidates each pass. Surviving candidates are then checked serially using local dominant-phase and orientation-coherence logic, with in-pass updates after every accepted fill.
+ - **Protected Hole Filling:** A final conservative filling stage applied to pixels previously excluded from standard hole filling (e.g. MAD-removed or low-confidence WSR pixels). Uses strict neighbourhood coverage, dominant-phase enforcement, and ring-based orientation validation to recover only physically reliable pixels.
  - **Orientation Clustering:** Both BFS and MPF use hierarchical single-linkage clustering of neighbour quaternions to assign a mean orientation. MPF additionally uses a ring-based fallback when the full neighbourhood does not yield a sufficiently strong dominant orientation cluster.
  - **Visualisation:** Phase maps and Inverse Pole Figure (IPF) maps are exported automatically at every major pipeline stage.
  - **Checkpointing:** Each stage saves a `.mat` checkpoint. Subsequent runs load from the last saved checkpoint, allowing interrupted runs to resume without reprocessing.
@@ -37,6 +38,9 @@
 | `radius_fill_relaxed` | `[7 6 5 4 3 2 1]` | Descending radius sequence for MPF hole filling |
 | `phaseFrac_strict` | radius-specific map | BFS support thresholds stored as `[Ni threshold, fracDom threshold]` |
 | `phaseFrac_relaxed` | radius-specific map | MPF support thresholds stored as `[Ni threshold, fracDom threshold]` |
+| `coverageFrac`   | 0.60 | Minimum neighbourhood coverage required for protected filling |
+| `domFracProt`    | 0.90 | Minimum dominant phase fraction for protected filling |
+| `threshFracRing` | 0.75 | Orientation coherence threshold for ring-based validation |
 
 Note: `[Ni threshold, fracDom threshold]`: `[min indexed support / neighbourhood size, min dominant-phase support / min indexed support]` 
 ### Strict phase-fraction thresholds
@@ -95,18 +99,19 @@ addpath(genpath('path_to_MAPClean'));
  3. Phase WSR (`doPhaseWSR_strict` / `doPhaseWSR_relaxed`)
  4. Orientation WSR (`doOrientationWSR`)
  5. Hole Filling (`doHoleFillingBFS` / `doHoleFillingMPF`)
+ 6. Proetected Hole Filling (`doProtectedFilling`)
  
  ## Parallelisation
  
  BFS (Strict):
  - Hole clusters are detected serially.
- - Clusters are processed in parallel across workers.
+- Clusters are processed in parallel across workers using a conflict-aware scheduler to prevent overlapping updates.
  - Each worker operates on an isolated patch and updates locally.
  - A convergence loop ensures missed pixels are retried.
  
  MPF (Relaxed):
  - Uses vectorised screening (`conv2`) to identify candidates.
- - Filling is applied sequentially with immediate updates.
+- Filling is applied sequentially with immediate in-pass updates, allowing newly filled pixels to support subsequent decisions within the same pass.
  - Parallelism is limited to screening and orientation detection stages.
  
  Orientation WSR:
