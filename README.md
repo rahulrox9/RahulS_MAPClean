@@ -44,7 +44,7 @@ MAPClean is a modular MATLAB pipeline, built on the open-source MTEX toolbox, fo
 
 Note: `[Ni threshold, fracDom threshold]`: `[min indexed support / neighbourhood size, min dominant-phase support / min indexed support]` 
 ### Strict phase-fraction thresholds
-- params.phaseFrac_strict(6) = [62/136 45/62];
+- params.phaseFrac_strict(6) = [56/136 45/62];
 - params.phaseFrac_strict(5) = [45/100 34/45];
 - params.phaseFrac_strict(4) = [30/68 23/30];
 - params.phaseFrac_strict(3) = [22/44 17/22];
